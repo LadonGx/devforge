@@ -9,7 +9,8 @@ function Demo({ block }: { block: Extract<Block, { type: 'demo' }> }) {
   const [trace, setTrace] = useState<TraceResult | null>(null)
   useEffect(() => {
     let alive = true
-    runTrace(block.code, 'js', block.fnName, block.input).then((t) => alive && setTrace(t))
+    setTrace(null) // evita mostrar o trace do demo anterior ao trocar de aula
+    runTrace(block.code, 'js', block.fnName, block.input, block.io).then((t) => alive && setTrace(t))
     return () => {
       alive = false
     }

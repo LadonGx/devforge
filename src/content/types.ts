@@ -1,4 +1,4 @@
-import type { CompareMode, TestCase } from '../engine/types'
+import type { CompareMode, IOSpec, TestCase } from '../engine/types'
 
 export type Difficulty = 'Fácil' | 'Médio' | 'Difícil'
 
@@ -8,7 +8,7 @@ export type Block =
   | { type: 'code'; code: string; caption?: string }
   | { type: 'callout'; tone: 'tip' | 'warn' | 'info'; title?: string; md: string }
   | { type: 'signals'; title?: string; items: string[] }
-  | { type: 'demo'; title: string; code: string; fnName: string; input: unknown[]; caption?: string }
+  | { type: 'demo'; title: string; code: string; fnName: string; input: unknown[]; caption?: string; io?: IOSpec }
   | { type: 'compare'; left: { title: string; md: string }; right: { title: string; md: string } }
 
 export interface Problem {
@@ -25,6 +25,8 @@ export interface Problem {
   starter: { js: string; ts: string }
   tests: TestCase[]
   compare?: CompareMode
+  /** conversão de entradas/saídas (ListNode, TreeNode, design de classe) */
+  io?: IOSpec
   hints: string[]
   explanation: {
     intuition: string

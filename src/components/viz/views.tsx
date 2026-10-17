@@ -1,5 +1,6 @@
 import type { V } from '../../engine/types'
 import { formatV } from '../../engine/serialize'
+import { ListView, TreeView, levelOrderToTree } from './structures'
 
 export interface Pointer {
   name: string
@@ -207,7 +208,54 @@ export function StackView({ name, items, prev, len }: { name: string; items: V[]
 }
 
 /** Visual compacto de um valor qualquer (usado em entradas/saídas de testes). */
-export function ValueView({ v, name, bad }: { v: V; name?: string; bad?: Set<number> }) {
+export function ValueView({ v, name, bad, as }: { v: V; name?: string; bad?: Set<number>; as?: 'raw' | 'list' | 'tree' | 'cycleList' }) {
+  if (as === 'list' && v.t === 'arr') {
+    return (
+      <div className="arr">
+        {name && <div className="viz-label">{name} (lista ligada)</div>}
+        {v.items.length === 0 ? (
+          <div className="arr-empty">null (lista vazia)</div>
+        ) : (
+          <ListView nodes={v.items.map((x, i) => ({ id: -(i + 1), val: x }))} labels={new Map()} allNames={[]} badIdx={bad} />
+        )}
+      </div>
+    )
+  }
+  if (as === 'cycleList' && v.t === 'arr' && v.items[0]?.t === 'arr' && v.items[1]?.t === 'n') {
+    const items = v.items[0].items
+    const pos = v.items[1].v
+    return (
+      <div className="arr">
+        {name && <div className="viz-label">{name} (lista ligada, pos = {pos})</div>}
+        {items.length === 0 ? (
+          <div className="arr-empty">null (lista vazia)</div>
+        ) : (
+          <ListView nodes={items.map((x, i) => ({ id: -(i + 1), val: x }))} cycleTo={pos >= 0 ? pos : undefined} labels={new Map()} allNames={[]} />
+        )}
+      </div>
+    )
+  }
+  if (as === 'tree' && v.t === 'arr') {
+    return (
+      <div className="arr">
+        {name && <div className="viz-label">{name} (árvore)</div>}
+        <TreeView root={levelOrderToTree(v.items)} labels={new Map()} allNames={[]} />
+        <code className="muted small">{formatV(v)}</code>
+      </div>
+    )
+  }
+  if (v.t === 'list' || v.t === 'tree') {
+    return (
+      <div className="arr">
+        {name && <div className="viz-label">{name}</div>}
+        {v.t === 'list' ? (
+          <ListView nodes={v.nodes} cycleTo={v.cycleTo} more={v.more} labels={new Map()} allNames={[]} />
+        ) : (
+          <TreeView root={v.root} labels={new Map()} allNames={[]} />
+        )}
+      </div>
+    )
+  }
   if (v.t === 'arr') {
     if (v.items.length > 0 && v.items.every((x) => x.t === 'arr')) {
       return <MatrixView name={name || ''} rows={v.items} />

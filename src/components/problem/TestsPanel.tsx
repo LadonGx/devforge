@@ -75,7 +75,11 @@ export function TestsPanel({ p, run, perf, busy, onVisualize, onPerf, nextProble
             <div key={i} className="case-row case-pending">
               <span className="case-icon">○</span>
               <span className="case-label">{t.label ?? `Caso ${i + 1}`}</span>
-              <code className="case-preview">{p.params.map((n, k) => `${n} = ${formatV(serialize(t.input[k]))}`).join(', ')}</code>
+              <code className="case-preview">
+                {p.io?.design
+                  ? (t.input[0] as string[]).join(', ')
+                  : p.params.map((n, k) => `${n} = ${formatV(serialize(t.input[k]))}`).join(', ')}
+              </code>
             </div>
           ))}
         </div>
@@ -88,8 +92,8 @@ export function TestsPanel({ p, run, perf, busy, onVisualize, onPerf, nextProble
       <div className="verdict verdict-bad">
         <div className="verdict-title">Tempo esgotado</div>
         <p>
-          Os testes não terminaram em 5 segundos. O mais provável é um <strong>loop infinito</strong> (um ponteiro que nunca anda, um
-          <code>while</code> cuja condição nunca fica falsa).
+          Os testes não terminaram em 5 segundos. As causas mais comuns são um <strong>loop infinito</strong> (um ponteiro que nunca anda, um{' '}
+          <code>while</code> cuja condição nunca fica falsa) ou uma solução <strong>lenta demais</strong>, como recursão exponencial sem memo.
         </p>
         <p className="small">Use 🔍 Visualizar: o visualizador para sozinho depois de muitos passos e você vê onde travou.</p>
       </div>
@@ -199,7 +203,9 @@ function CaseRow({
 }) {
   const t = p.tests[idx]
   const expected = serialize(t.expected)
-  const msg = !r.pass && !r.error ? diagnose(expected, r.got, ordered) : null
+  const design = !!p.io?.design
+  const msg = !r.pass && !r.error && !design ? diagnose(expected, r.got, ordered) : null
+  const retAs = p.io?.ret
   return (
     <div className={'case' + (r.pass ? ' case-pass' : ' case-fail') + (open ? ' open' : '')}>
       <button className="case-row" onClick={toggle}>
@@ -211,18 +217,23 @@ function CaseRow({
       </button>
       {open && (
         <div className="case-detail">
+          {design ? (
+            <DesignTable ops={t.input[0] as string[]} args={t.input[1] as unknown[][]} expected={t.expected as unknown[]} got={r.got} error={!!r.error} />
+          ) : (
           <div className="io-section">
             <div className="io-title">Entrada</div>
             <div className="io-values">
               {p.params.map((name, k) => (
-                <ValueView key={name} name={name} v={serialize(t.input[k])} />
+                <ValueView key={name} name={name} v={serialize(t.input[k])} as={p.io?.args?.[k]} />
               ))}
             </div>
           </div>
+          )}
+          {(!design || r.error) && (
           <div className="io-grid">
             <div className="io-section">
               <div className="io-title">Esperado</div>
-              <ValueView v={expected} />
+              <ValueView v={expected} as={retAs} />
             </div>
             <div className="io-section">
               <div className="io-title">{r.error ? 'Erro' : 'Recebido'}</div>
@@ -232,10 +243,11 @@ function CaseRow({
                   {r.error.line && ` (linha ${r.error.line})`}
                 </div>
               ) : r.got ? (
-                <ValueView v={r.got} bad={r.pass ? undefined : badIndexes(expected, r.got, ordered)} />
+                <ValueView v={r.got} as={retAs} bad={r.pass ? undefined : badIndexes(expected, r.got, ordered)} />
               ) : null}
             </div>
           </div>
+          )}
           {msg && <div className="diagnosis">🧭 {inlineMd(msg)}</div>}
           {r.logs.length > 0 && (
             <div className="io-section">
@@ -248,6 +260,50 @@ function CaseRow({
           </button>
         </div>
       )}
+    </div>
+  )
+}
+
+/** Problemas de design: uma linha por operação, com esperado × recebido. */
+function DesignTable({ ops, args, expected, got, error }: { ops: string[]; args: unknown[][]; expected: unknown[]; got?: V; error: boolean }) {
+  const gotItems = got?.t === 'arr' ? got.items : []
+  return (
+    <div className="io-section" style={{ width: '100%' }}>
+      <div className="io-title">Operações</div>
+      <table className="design-table">
+        <thead>
+          <tr>
+            <th>#</th>
+            <th>chamada</th>
+            <th>esperado</th>
+            <th>recebido</th>
+          </tr>
+        </thead>
+        <tbody>
+          {ops.map((op, i) => {
+            const exp = serialize(expected[i])
+            const g = gotItems[i]
+            const bad = !error && got && !sameV(exp, g)
+            return (
+              <tr key={i} className={bad ? 'bad' : ''}>
+                <td className="muted">{i}</td>
+                <td>
+                  <code>
+                    {i === 0 ? 'new ' : '.'}
+                    {op}({(args[i] ?? []).map((a) => formatV(serialize(a))).join(', ')})
+                  </code>
+                </td>
+                <td>
+                  <code>{formatV(exp)}</code>
+                </td>
+                <td>
+                  <code>{g ? formatV(g) : error ? '—' : ''}</code>
+                </td>
+              </tr>
+            )
+          })}
+        </tbody>
+      </table>
     </div>
   )
 }

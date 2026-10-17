@@ -1,9 +1,11 @@
 /// <reference lib="webworker" />
-import { serialize, formatLogArg } from './serialize'
+import { serialize, formatLogArg, formatV } from './serialize'
 import { compareResult } from './compare'
-import type { FrameSnap, RunError, Step, TestResult, WorkerRequest, WorkerResponse, V } from './types'
+import { GLOBALS, buildArgs, convertResult, runDesign } from './ds'
+import type { CallNode, FrameSnap, IOSpec, RunError, Step, TestResult, WorkerRequest, WorkerResponse, V } from './types'
 
 const MAX_STEPS = 2500
+const MAX_CALLS = 400
 const MAX_LOGS = 300
 const LINE_OFFSET = 2 // `new Function` adiciona 2 linhas antes do código
 
@@ -35,41 +37,53 @@ function toRunError(e: unknown): RunError {
   return { message: String(e), name: 'Error' }
 }
 
-function compile(code: string, fnName: string, extraParams: string[] = []): (...a: unknown[]) => unknown {
+const GLOBAL_NAMES = Object.keys(GLOBALS)
+const GLOBAL_VALUES = Object.values(GLOBALS)
+
+/**
+ * Compila o código do usuário. As estruturas (ListNode, TreeNode, MinHeap...) ficam num escopo
+ * externo, então o usuário pode redeclará-las se quiser. O código começa na linha 3 (LINE_OFFSET).
+ */
+function compile(code: string, fnName: string, hooks: Record<string, unknown> = {}): unknown {
+  const names = [...GLOBAL_NAMES, ...Object.keys(hooks)]
   const factory = new Function(
-    ...extraParams,
-    `${code}\n;return (typeof ${fnName} !== 'undefined') ? ${fnName} : undefined;`,
+    ...names,
+    `return (function(){${code}\n;return (typeof ${fnName} !== 'undefined') ? ${fnName} : undefined;})()`,
   )
-  return factory as (...a: unknown[]) => unknown
+  return factory(...GLOBAL_VALUES, ...Object.values(hooks))
 }
 
 function getFn(exported: unknown, fnName: string): (...a: unknown[]) => unknown {
   if (typeof exported !== 'function') {
-    throw new ReferenceError(`Não encontrei a função "${fnName}". Não renomeie a função principal.`)
+    throw new ReferenceError(`Não encontrei "${fnName}". Não renomeie a função/classe principal.`)
   }
   return exported as (...a: unknown[]) => unknown
 }
 
-async function call(fn: (...a: unknown[]) => unknown, args: unknown[]) {
-  let r = fn(...args)
+/** Executa um caso: função comum ou problema de design (classe). */
+async function execute(fn: (...a: unknown[]) => unknown, input: unknown[], io: IOSpec | undefined) {
+  if (io?.design) {
+    const [ops, args] = structuredClone(input) as [string[], unknown[][]]
+    return runDesign(fn, ops, args)
+  }
+  let r = fn(...buildArgs(io, input))
   if (r instanceof Promise) r = await r
-  return r
+  return convertResult(io, r)
 }
 
 async function runTests(req: Extract<WorkerRequest, { kind: 'test' }>): Promise<WorkerResponse> {
   let fn: (...a: unknown[]) => unknown
   try {
-    fn = getFn(compile(req.code, req.fnName)(), req.fnName)
+    fn = getFn(compile(req.code, req.fnName), req.fnName)
   } catch (e) {
     return { kind: 'test', results: [], fatal: toRunError(e) }
   }
   const results: TestResult[] = []
   for (const t of req.tests) {
     logs = []
-    const args = structuredClone(t.input)
     const t0 = performance.now()
     try {
-      const got = await call(fn, args)
+      const got = await execute(fn, t.input, req.io)
       const ms = performance.now() - t0
       results.push({ pass: compareResult(got, t.expected, req.compare), got: serialize(got), logs, ms })
     } catch (e) {
@@ -79,6 +93,19 @@ async function runTests(req: Extract<WorkerRequest, { kind: 'test' }>): Promise<
   return { kind: 'test', results }
 }
 
+const short = (s: string, n = 22) => (s.length > n ? s.slice(0, n - 1) + '…' : s)
+
+/** Rótulo curto para argumentos/retornos na árvore de chamadas (nós viram "nó 4"). */
+function label(x: unknown, n: number) {
+  const v = serialize(x)
+  if (v.t === 'tree') return `nó ${formatV(v.root.val)}`
+  if (v.t === 'list') return `nó ${formatV(v.nodes[0].val)}`
+  if (v.t === 'map') return `Map(${v.size})`
+  if (v.t === 'set') return `Set(${v.size})`
+  if (v.t === 'arr' && formatV(v).length > n) return `Array(${v.len})`
+  return short(formatV(v), n)
+}
+
 async function runTrace(req: Extract<WorkerRequest, { kind: 'trace' }>): Promise<WorkerResponse> {
   logs = []
   interface Frame {
@@ -86,9 +113,12 @@ async function runTrace(req: Extract<WorkerRequest, { kind: 'trace' }>): Promise
     name: string
     params: string[]
     cap?: () => Record<string, unknown>
+    call?: CallNode
+    lastRet?: unknown
   }
   const frames: Frame[] = []
   const steps: Step[] = []
+  const calls: CallNode[] = []
   let fid = 0
 
   const serVars = (o: Record<string, unknown>): [string, V][] =>
@@ -117,13 +147,32 @@ async function runTrace(req: Extract<WorkerRequest, { kind: 'trace' }>): Promise
     if (top) top.cap = cap
     push({ line, kind: 'line', stack: snapStack(), logs: logs.length })
   }
-  const __enter = (name: string, params: string[]) => {
-    frames.push({ id: ++fid, name, params })
+  const __enter = (name: string, params: string[], argsCap?: () => unknown[]) => {
+    const id = ++fid
+    const frame: Frame = { id, name, params }
+    if (calls.length < MAX_CALLS) {
+      let args = ''
+      try {
+        args = (argsCap ? argsCap() : []).map((a) => label(a, 14)).join(', ')
+      } catch {
+        /* ignora */
+      }
+      const parent = frames.length ? frames[frames.length - 1].id : null
+      frame.call = { id, parent, name, args, start: steps.length }
+      calls.push(frame.call)
+    }
+    frames.push(frame)
   }
   const __exit = () => {
-    frames.pop()
+    const f = frames.pop()
+    if (f?.call) {
+      f.call.end = steps.length
+      if (f.lastRet !== undefined) f.call.ret = label(f.lastRet, 18)
+    }
   }
   const __ret = (line: number, v: unknown) => {
+    const top = frames[frames.length - 1]
+    if (top) top.lastRet = v
     push({ line, kind: 'return', stack: snapStack(), ret: serialize(v), logs: logs.length })
     return v
   }
@@ -132,29 +181,29 @@ async function runTrace(req: Extract<WorkerRequest, { kind: 'trace' }>): Promise
   let error: RunError | undefined
   let returnValue: V | undefined
   try {
-    const fn = getFn(compile(req.code, req.fnName, ['__s', '__enter', '__exit', '__ret'])(__s, __enter, __exit, __ret), req.fnName)
-    const r = await call(fn, structuredClone(req.input))
+    const fn = getFn(compile(req.code, req.fnName, { __s, __enter, __exit, __ret }), req.fnName)
+    const r = await execute(fn, req.input, req.io)
     returnValue = serialize(r)
   } catch (e) {
     if (e instanceof StepLimit) truncated = true
     else error = toRunError(e)
   }
-  return { kind: 'trace', result: { steps, logs, returnValue, error, truncated } }
+  return { kind: 'trace', result: { steps, calls, logs, returnValue, error, truncated } }
 }
 
 async function runPerf(req: Extract<WorkerRequest, { kind: 'perf' }>): Promise<WorkerResponse> {
   try {
     const gen = new Function(`return (${req.gen})`)() as (n: number) => unknown[]
     const input = gen(req.n)
-    const ref = getFn(compile(req.refCode, req.fnName)(), req.fnName)
-    const user = getFn(compile(req.code, req.fnName)(), req.fnName)
+    const ref = getFn(compile(req.refCode, req.fnName), req.fnName)
+    const user = getFn(compile(req.code, req.fnName), req.fnName)
     logs = []
     let t0 = performance.now()
-    await call(ref, structuredClone(input))
+    await execute(ref, input, req.io)
     const refMs = performance.now() - t0
     logs = []
     t0 = performance.now()
-    await call(user, structuredClone(input))
+    await execute(user, input, req.io)
     const userMs = performance.now() - t0
     return { kind: 'perf', result: { userMs, refMs } }
   } catch (e) {

@@ -13,10 +13,40 @@ export type V =
   | { t: 'set'; id: number; items: V[]; size: number }
   | { t: 'obj'; id: number; cls: string; entries: [string, V][] }
   | { t: 'promise'; id: number }
+  | { t: 'list'; id: number; nodes: { id: number; val: V }[]; cycleTo?: number; more?: boolean }
+  | { t: 'tree'; id: number; root: TNode; count: number }
   | { t: 'cycle'; id: number }
   | { t: 'deep' }
 
+export interface TNode {
+  id: number
+  val: V
+  left: TNode | null
+  right: TNode | null
+  cut?: boolean // filhos omitidos (limite de profundidade)
+}
+
 export type Lang = 'js' | 'ts'
+
+/** Como converter entradas/saídas de um problema (formato LeetCode). */
+export type ArgType = 'raw' | 'list' | 'tree' | 'cycleList'
+export interface IOSpec {
+  args?: ArgType[]
+  ret?: 'raw' | 'list' | 'tree'
+  /** problema de "design": fnName é uma classe; input = [ops, args] */
+  design?: boolean
+}
+
+/** Uma chamada de função registrada durante o trace (para a árvore de chamadas). */
+export interface CallNode {
+  id: number
+  parent: number | null
+  name: string
+  args: string
+  start: number
+  end?: number
+  ret?: string
+}
 
 // ---------- Trace (execução passo a passo) ----------
 export interface FrameSnap {
@@ -36,6 +66,7 @@ export interface Step {
 
 export interface TraceResult {
   steps: Step[]
+  calls?: CallNode[]
   logs: string[]
   returnValue?: V
   error?: RunError
@@ -75,9 +106,9 @@ export interface PerfResult {
 
 // ---------- Mensagens com o worker ----------
 export type WorkerRequest =
-  | { kind: 'test'; code: string; fnName: string; tests: { input: unknown[]; expected: unknown }[]; compare: CompareMode }
-  | { kind: 'trace'; code: string; fnName: string; input: unknown[] }
-  | { kind: 'perf'; code: string; refCode: string; fnName: string; gen: string; n: number }
+  | { kind: 'test'; code: string; fnName: string; tests: { input: unknown[]; expected: unknown }[]; compare: CompareMode; io?: IOSpec }
+  | { kind: 'trace'; code: string; fnName: string; input: unknown[]; io?: IOSpec }
+  | { kind: 'perf'; code: string; refCode: string; fnName: string; gen: string; n: number; io?: IOSpec }
 
 export type WorkerResponse =
   | { kind: 'test'; results: TestResult[]; fatal?: RunError }

@@ -1093,3 +1093,37 @@ div.case-row {
     flex-wrap: wrap;
   }
 }
+
+.design-table {
+  border-collapse: collapse;
+  font-size: 13px;
+  width: 100%;
+  max-width: 640px;
+}
+.design-table th {
+  text-align: left;
+  font-size: 11px;
+  color: var(--muted);
+  padding: 4px 8px;
+  border-bottom: 1px solid var(--border);
+}
+.design-table td {
+  padding: 4px 8px;
+  border-bottom: 1px solid var(--border);
+}
+.design-table tr.bad td {
+  background: var(--bad-bg);
+}
+.design-table code {
+  background: none;
+  border: none;
+  padding: 0;
+}
+
+.roadmap-part {
+  margin: 8px 0 14px 56px;
+  font-size: 13px;
+  text-transform: uppercase;
+  letter-spacing: 0.07em;
+  color: var(--muted);
+}

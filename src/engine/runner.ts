@@ -1,7 +1,7 @@
 import { transform } from 'sucrase'
 import { parse } from 'acorn'
 import { instrument } from './instrument'
-import type { CompareMode, Lang, PerfResult, RunError, TestCase, TestResult, TraceResult, WorkerRequest, WorkerResponse } from './types'
+import type { CompareMode, IOSpec, Lang, PerfResult, RunError, TestCase, TestResult, TraceResult, WorkerRequest, WorkerResponse } from './types'
 
 export interface Prepared {
   js?: string
@@ -59,11 +59,11 @@ export interface TestRun {
   timeout?: boolean
 }
 
-export async function runTests(code: string, lang: Lang, fnName: string, tests: TestCase[], compare: CompareMode): Promise<TestRun> {
+export async function runTests(code: string, lang: Lang, fnName: string, tests: TestCase[], compare: CompareMode, io?: IOSpec): Promise<TestRun> {
   const p = prepare(code, lang)
   if (p.error) return { results: [], fatal: p.error }
   const res = await runInWorker(
-    { kind: 'test', code: p.js!, fnName, tests: tests.map((t) => ({ input: t.input, expected: t.expected })), compare },
+    { kind: 'test', code: p.js!, fnName, tests: tests.map((t) => ({ input: t.input, expected: t.expected })), compare, io },
     5000,
   )
   if (res.kind === 'timeout') return { results: [], timeout: true }
@@ -71,7 +71,7 @@ export async function runTests(code: string, lang: Lang, fnName: string, tests: 
   return { results: res.results, fatal: res.fatal }
 }
 
-export async function runTrace(code: string, lang: Lang, fnName: string, input: unknown[]): Promise<TraceResult> {
+export async function runTrace(code: string, lang: Lang, fnName: string, input: unknown[], io?: IOSpec): Promise<TraceResult> {
   const p = prepare(code, lang)
   if (p.error) return { steps: [], logs: [], error: p.error, truncated: false }
   let instrumented: string
@@ -80,7 +80,7 @@ export async function runTrace(code: string, lang: Lang, fnName: string, input: 
   } catch (e) {
     return { steps: [], logs: [], error: { name: 'Error', message: 'Falha ao instrumentar: ' + (e as Error).message }, truncated: false }
   }
-  const res = await runInWorker({ kind: 'trace', code: instrumented, fnName, input }, 6000)
+  const res = await runInWorker({ kind: 'trace', code: instrumented, fnName, input, io }, 6000)
   if (res.kind === 'timeout') {
     return { steps: [], logs: [], error: { name: 'Timeout', message: 'A execução demorou demais (loop infinito?).' }, truncated: false }
   }
@@ -89,12 +89,21 @@ export async function runTrace(code: string, lang: Lang, fnName: string, input: 
   return res.result
 }
 
-export async function runPerf(code: string, lang: Lang, refCode: string, fnName: string, gen: string, n: number, limitMs: number): Promise<PerfResult> {
+export async function runPerf(
+  code: string,
+  lang: Lang,
+  refCode: string,
+  fnName: string,
+  gen: string,
+  n: number,
+  limitMs: number,
+  io?: IOSpec,
+): Promise<PerfResult> {
   const p = prepare(code, lang)
   if (p.error) return { error: p.error }
   const r = prepare(refCode, 'js')
   if (r.error) return { error: r.error }
-  const res = await runInWorker({ kind: 'perf', code: p.js!, refCode: r.js!, fnName, gen, n }, limitMs)
+  const res = await runInWorker({ kind: 'perf', code: p.js!, refCode: r.js!, fnName, gen, n, io }, limitMs)
   if (res.kind === 'timeout') return { timeout: true }
   if (res.kind === 'test' && res.fatal) return { error: res.fatal }
   if (res.kind !== 'perf') return { error: { name: 'Error', message: 'Resposta inesperada' } }

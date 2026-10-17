@@ -75,12 +75,12 @@ function ProblemWorkspace({ p }: { p: Problem }) {
     setBottomTab('tests')
     setPerf(null)
     progress.markAttempted(p.id)
-    const run = await runTests(code, lang, p.fnName, p.tests, p.compare ?? 'exact')
+    const run = await runTests(code, lang, p.fnName, p.tests, p.compare ?? 'exact', p.io)
     setTestRun(run)
     const allPass = !run.fatal && !run.timeout && run.results.length > 0 && run.results.every((r) => r.pass)
     if (allPass && p.perf) {
       setBusy('perf')
-      const pr = await runPerf(code, lang, p.solution.js, p.fnName, p.perf.gen.toString(), p.perf.n, p.perf.limitMs * 2 + 1000)
+      const pr = await runPerf(code, lang, p.solution.js, p.fnName, p.perf.gen.toString(), p.perf.n, p.perf.limitMs * 2 + 1000, p.io)
       setPerf(pr)
       const ok = !pr.timeout && !pr.error && (pr.userMs ?? Infinity) <= p.perf.limitMs
       if (ok) progress.markSolved(p.id)
@@ -98,7 +98,8 @@ function ProblemWorkspace({ p }: { p: Problem }) {
       setEditorPct((pct) => Math.min(pct, 32))
       setVizCase(caseIdx)
       const input = p.tests[caseIdx].input
-      const result = source === 'user' ? await runTrace(code, lang, p.fnName, input) : await runTrace(p.solution.js, 'js', p.fnName, input)
+      const result =
+        source === 'user' ? await runTrace(code, lang, p.fnName, input, p.io) : await runTrace(p.solution.js, 'js', p.fnName, input, p.io)
       setTrace({ result, source, caseIdx })
       setBusy(null)
     },

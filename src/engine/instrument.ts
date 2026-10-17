@@ -22,6 +22,8 @@ type Node = {
 interface Ctx {
   inFn: boolean
   scopes: string[][]
+  /** dentro de método de classe: captura `this` */
+  thisOk?: boolean
 }
 
 interface Ins {
@@ -109,7 +111,8 @@ export function instrument(code: string): InstrumentResult {
 
   const snapText = (line: number, ctx: Ctx) => {
     const names = [...new Set(ctx.scopes.flat())].filter((n) => !n.startsWith('__'))
-    const body = names.map((n) => `try{__o[${JSON.stringify(n)}]=${n}}catch(__e){}`).join('')
+    let body = names.map((n) => `try{__o[${JSON.stringify(n)}]=${n}}catch(__e){}`).join('')
+    if (ctx.thisOk) body += `try{__o["this"]=this}catch(__e){}`
     return `__s(${line},()=>{const __o={};${body}return __o});`
   }
 
@@ -138,7 +141,7 @@ export function instrument(code: string): InstrumentResult {
     add(body.end, '}')
   }
 
-  const handleFn = (fn: Node, _ctx: Ctx, hint?: string) => {
+  const handleFn = (fn: Node, ctx: Ctx, hint?: string, isMethod = false) => {
     const body = fn.body as Node
     const params: string[] = []
     for (const p of fn.params as Node[]) patternNames(p, params)
@@ -151,8 +154,9 @@ export function instrument(code: string): InstrumentResult {
     const fnName = name || hint || 'anônima'
     const fnScope = [...params, ...varNames(body.body), ...lexNames(body.body as Node[])]
     if (name && fn.type === 'FunctionExpression') fnScope.push(name)
-    add(body.start + 1, `__enter(${JSON.stringify(fnName)},${JSON.stringify(params)});try{`)
-    handleList(body.body as Node[], { inFn: true, scopes: [fnScope] })
+    const thisOk = isMethod || (fn.type === 'ArrowFunctionExpression' && !!ctx.thisOk)
+    add(body.start + 1, `__enter(${JSON.stringify(fnName)},${JSON.stringify(params)},()=>[${params.join(',')}]);try{`)
+    handleList(body.body as Node[], { inFn: true, scopes: [fnScope], thisOk })
     add(body.end - 1, `}finally{__exit()}`)
   }
 
@@ -193,7 +197,7 @@ export function instrument(code: string): InstrumentResult {
         if (val && fnTypes.has(val.type)) {
           const hint = key.type === 'Identifier' ? (key.name as string) : undefined
           if (node.computed) walk(key, ctx)
-          handleFn(val, ctx, hint)
+          handleFn(val, ctx, hint, node.type === 'MethodDefinition')
           return
         }
         break

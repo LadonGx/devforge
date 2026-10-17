@@ -451,3 +451,224 @@
     max-height: 320px;
   }
 }
+
+/* lista ligada */
+.ll-row {
+  display: flex;
+  align-items: flex-start;
+  flex-wrap: wrap;
+  row-gap: 6px;
+  padding-top: 4px;
+}
+.ll-item {
+  display: flex;
+  align-items: flex-start;
+}
+.ll-col {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+.ll-node {
+  display: flex;
+  align-items: stretch;
+  height: 34px;
+  border: 1.5px solid var(--border-2);
+  border-radius: 7px;
+  background: var(--panel-2);
+  font-family: var(--mono);
+  font-weight: 700;
+  font-size: 13px;
+  overflow: hidden;
+}
+.ll-node.has-ptr {
+  border-width: 2px;
+}
+.ll-node.cycle-target {
+  box-shadow: 0 0 0 3px var(--warn-bg);
+}
+.ll-val {
+  display: grid;
+  place-items: center;
+  min-width: 34px;
+  padding: 0 7px;
+}
+.ll-next {
+  width: 12px;
+  border-left: 1.5px solid var(--border-2);
+  background: color-mix(in srgb, var(--accent) 10%, transparent);
+}
+.ll-arrow {
+  color: var(--muted);
+  font-weight: 700;
+  margin: 7px 5px 0;
+}
+.ll-null {
+  font-family: var(--mono);
+  font-size: 12px;
+  color: var(--muted);
+  margin-top: 9px;
+}
+.ll-cycle {
+  font-size: 12px;
+  color: var(--warn);
+  font-weight: 700;
+  margin: 9px 0 0 8px;
+}
+
+/* árvore */
+.tree-scroll {
+  overflow-x: auto;
+  max-width: 100%;
+}
+.tree-svg,
+.calltree-svg {
+  display: block;
+}
+.tree-edge {
+  stroke: var(--border-2);
+  stroke-width: 1.5;
+}
+.tree-node circle {
+  fill: var(--panel-2);
+  stroke: var(--border-2);
+  stroke-width: 1.5;
+}
+.tree-node.hl circle {
+  fill: color-mix(in srgb, var(--accent-2) 28%, var(--panel-2));
+  stroke-width: 2.5;
+}
+.tree-node.changed circle {
+  fill: var(--warn-bg);
+}
+.tree-val {
+  font-family: var(--mono);
+  font-size: 12px;
+  font-weight: 700;
+  fill: var(--text);
+}
+.tree-label {
+  font-family: var(--mono);
+  font-size: 11px;
+  font-weight: 700;
+}
+.tree-cut {
+  fill: var(--muted);
+  font-size: 12px;
+}
+
+/* heap */
+.heap-row {
+  display: flex;
+  gap: 18px;
+  align-items: flex-start;
+  flex-wrap: wrap;
+}
+
+/* árvore de chamadas */
+.calltree {
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 6px 10px 8px;
+  background: var(--panel);
+}
+.calltree-toggle {
+  background: none;
+  border: none;
+  padding: 4px 0;
+  font-weight: 700;
+  font-size: 13px;
+  cursor: pointer;
+}
+.calltree-legend {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex-wrap: wrap;
+  margin-top: 4px;
+}
+.lg {
+  display: inline-block;
+  width: 12px;
+  height: 12px;
+  border-radius: 3px;
+  border: 1.5px solid var(--border-2);
+  margin-left: 6px;
+}
+.lg-current {
+  background: var(--accent);
+  border-color: var(--accent);
+}
+.lg-active {
+  background: var(--accent-bg);
+  border-color: var(--accent);
+}
+.lg-done {
+  background: var(--ok-bg);
+  border-color: var(--ok);
+}
+.call rect {
+  fill: var(--panel-2);
+  stroke: var(--border-2);
+  stroke-width: 1.2;
+}
+.call.current rect {
+  fill: var(--accent);
+  stroke: var(--accent);
+}
+.call.current .call-label {
+  fill: #fff;
+}
+.call.active rect {
+  fill: var(--accent-bg);
+  stroke: var(--accent);
+}
+.call.done rect {
+  fill: var(--ok-bg);
+  stroke: color-mix(in srgb, var(--ok) 60%, transparent);
+}
+.call-label {
+  font-family: var(--mono);
+  font-size: 11px;
+  font-weight: 600;
+  fill: var(--text);
+}
+.call-ret {
+  font-family: var(--mono);
+  font-size: 11px;
+  font-weight: 700;
+  fill: var(--ok);
+}
+.calltree-list {
+  font-family: var(--mono);
+  font-size: 12px;
+  max-height: 220px;
+  overflow: auto;
+}
+.calltree-list .call {
+  padding: 1px 4px;
+}
+.calltree-list .call.current {
+  background: var(--accent);
+  color: #fff;
+}
+.calltree-list .call.active {
+  color: var(--accent);
+}
+.calltree-list .call.done {
+  color: var(--muted);
+}
+.calltree-scroll {
+  max-height: 250px;
+  overflow: auto;
+  max-width: 100%;
+}
+.ll-node.changed {
+  background: var(--warn-bg);
+  border-color: var(--warn);
+}
+.ll-node.bad {
+  background: var(--bad-bg);
+  border-color: var(--bad);
+  color: var(--bad);
+}

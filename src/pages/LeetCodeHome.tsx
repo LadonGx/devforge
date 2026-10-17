@@ -1,4 +1,10 @@
+import { Fragment } from 'react'
 import { Link } from 'react-router-dom'
+
+const PART_START: Record<string, string> = {
+  'arrays-hashing': 'Parte 1 · Arrays e strings',
+  'linked-list': 'Parte 2 · Estruturas ligadas, recursão e grafos',
+}
 import { PATTERNS, problemById } from '../content/leetcode'
 import { useProgress } from '../lib/progress'
 import { moduleProgress, patternProgress } from '../lib/stats'
@@ -59,8 +65,11 @@ export function LeetCodeHome() {
       <div className="roadmap">
         {PATTERNS.map((p, idx) => {
           const pr = patternProgress(p, s)
+          const part = PART_START[p.id]
           return (
-            <section key={p.id} className="roadmap-item">
+            <Fragment key={p.id}>
+            {part && <h3 className="roadmap-part">{part}</h3>}
+            <section className="roadmap-item">
               <div className="roadmap-rail">
                 <span className={'roadmap-dot' + (pr.complete ? ' done' : pr.started ? ' started' : '')} style={{ borderColor: p.color }}>
                   {pr.complete ? '✓' : idx + 1}
@@ -106,6 +115,7 @@ export function LeetCodeHome() {
                 </div>
               </div>
             </section>
+            </Fragment>
           )
         })}
         <section className="roadmap-item">
@@ -113,8 +123,7 @@ export function LeetCodeHome() {
             <span className="roadmap-dot soon">…</span>
           </div>
           <div className="card soon-card">
-            <strong>Em breve na parte 2:</strong> Linked List, Trees, Heap / Priority Queue, Backtracking, Graphs e Programação Dinâmica, com
-            visualização de nós e árvores.
+            <strong>Em breve na parte 3:</strong> Tries, Intervals, Greedy, Advanced Graphs (Dijkstra, Union-Find) e 2-D Dynamic Programming.
           </div>
         </section>
       </div>

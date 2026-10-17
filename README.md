@@ -21,16 +21,20 @@ Abra o endereço que aparecer no terminal (normalmente http://localhost:5173).
 
 O progresso (problemas resolvidos, aulas concluídas e o código que você escreveu) fica salvo no `localStorage` do navegador.
 
-## O que já existe (feature 1)
+## O que já existe
 
 - **Vitrine** com os módulos separados por volume (JavaScript → TypeScript → Node/Web → Arquitetura → React + CSS) e **trilhas sugeridas**.
-- **Módulo LeetCode / NeetCode, parte 1**: 5 padrões (Arrays & Hashing, Two Pointers, Sliding Window, Stack, Binary Search), cada um com aula + animação, e 17 problemas.
+- **Módulo LeetCode / NeetCode** com 11 padrões e 37 problemas, cada padrão com aula + animação:
+  - parte 1: Arrays & Hashing, Two Pointers, Sliding Window, Stack, Binary Search;
+  - parte 2: Linked List, Trees, Heap / Priority Queue, Backtracking, Graphs, 1-D DP.
+- `ListNode`, `TreeNode`, `MinHeap` e `MaxHeap` já disponíveis no editor (como no LeetCode). Entradas no formato do LeetCode (`[1,2,3]`, árvores em ordem de nível) são convertidas automaticamente.
+- Problemas de **design** (classes com várias operações, ex.: Kth Largest in a Stream) com tabela de operações esperado × recebido.
 - Em cada problema:
   - editor JS ou TS (Ctrl+Enter roda os testes);
   - testes rodando num Web Worker isolado (loop infinito não trava a página);
   - diff visual do caso que falhou + diagnóstico em português ("retornou undefined", "tamanho diferente"...);
   - teste de desempenho com entrada grande (Time Limit Exceeded quando a solução é O(n²));
-  - **visualizador passo a passo** do seu código e da solução de referência: linha atual no editor, variáveis que mudaram, ponteiros (`i`, `l`, `r`, `lo`, `hi`, `mid`...) desenhados sob o array, janela `[l, r]`, Map/Set como tabela, pilha na vertical, pilha de chamadas para recursão;
+  - **visualizador passo a passo** do seu código e da solução de referência: linha atual no editor, variáveis que mudaram, ponteiros (`i`, `l`, `r`, `lo`, `hi`, `mid`...) desenhados sob o array, janela `[l, r]`, Map/Set como tabela, pilha na vertical, listas ligadas com setas, árvores desenhadas, heap como árvore, fila de BFS e a **árvore de chamadas** da recursão (backtracking, DFS, memoização);
   - dicas progressivas e solução explicada (intuição, passo a passo, complexidade, erros comuns).
 
 ## Estrutura
@@ -61,4 +65,4 @@ scripts/validate-content.ts
 
 ## Próximas features
 
-LeetCode parte 2 (listas ligadas, árvores, heap, backtracking, grafos, DP) → Fundamentos de JS → Assincronismo (event loop visual) → TypeScript com checagem de tipos → HTTP/REST, JWT, OAuth2 → SOLID, Clean Code, Clean Architecture → React + CSS.
+Fundamentos de JS → Assincronismo (event loop visual) → TypeScript com checagem de tipos → HTTP/REST, JWT, OAuth2 → SOLID, Clean Code, Clean Architecture → React + CSS.

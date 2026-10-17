@@ -4,6 +4,7 @@ import { formatV } from '../../engine/serialize'
 import { CodeEditor } from '../CodeEditor'
 import { FrameView } from './FrameView'
 import { ValueView } from './views'
+import { CallTreeView } from './structures'
 
 interface Props {
   trace: TraceResult
@@ -28,6 +29,7 @@ export function Visualizer({ trace, code, lang = 'js', onLine, title }: Props) {
   const [pos, setPos] = useState(0)
   const [playing, setPlaying] = useState(false)
   const [speed, setSpeed] = useState(1)
+  const [showCalls, setShowCalls] = useState(true)
   const rootRef = useRef<HTMLDivElement>(null)
 
   useEffect(() => {
@@ -69,9 +71,31 @@ export function Visualizer({ trace, code, lang = 'js', onLine, title }: Props) {
     }
   }
 
-  const frames = step ? [...step.stack].reverse() : []
+  const frames = useMemo(() => (step ? [...step.stack].reverse() : []), [step])
   const prevFrames = useMemo(() => new Map((prevStep?.stack || []).map((f) => [f.id, f])), [prevStep])
   const logs = trace.logs.slice(0, step ? step.logs : trace.logs.length)
+  const context = useMemo(() => (step ? step.stack.flatMap((f) => f.vars.map(([, v]) => v)) : []), [step])
+  const calls = trace.calls ?? []
+  // árvore de chamadas só ajuda quando há recursão ou várias chamadas de funções auxiliares
+  const hasCallTree = calls.length > 1 && calls.some((c) => c.parent !== null)
+  // estruturas desenhadas em frames anteriores (o atual vem primeiro) para não repetir
+  const shownBefore = useMemo(() => {
+    const acc = new Set<number>()
+    return frames.map((f) => {
+      const snapshot = new Set(acc)
+      for (const [, v] of f.vars) if ('id' in v && (v.t === 'arr' || v.t === 'map' || v.t === 'set' || v.t === 'obj')) acc.add(v.id)
+      return snapshot
+    })
+  }, [frames])
+  const focusCell = useMemo((): [number, number] | null => {
+    const top = frames[0]
+    if (!top) return null
+    const m = new Map(top.vars)
+    const r = m.get('row') ?? m.get('r')
+    const c = m.get('col') ?? m.get('c')
+    return r?.t === 'n' && c?.t === 'n' ? [r.v, c.v] : null
+  }, [frames])
+  const activeIds = useMemo(() => new Set(step ? step.stack.map((f) => f.id) : []), [step])
 
   const description = (() => {
     if (!step) return null
@@ -131,8 +155,34 @@ export function Visualizer({ trace, code, lang = 'js', onLine, title }: Props) {
       )}
 
       <div className="viz-body">
+        {hasCallTree && (
+          <div className="calltree">
+            <button className="calltree-toggle" onClick={() => setShowCalls(!showCalls)}>
+              {showCalls ? '▾' : '▸'} Árvore de chamadas <span className="muted">({callCountLabel(calls.filter((c) => c.start <= pos).length)})</span>
+            </button>
+            {showCalls && (
+              <>
+                <CallTreeView calls={calls} pos={pos} activeIds={activeIds} currentId={step?.stack[step.stack.length - 1]?.id} />
+                <div className="calltree-legend muted small">
+                  <span className="lg lg-current" /> executando agora <span className="lg lg-active" /> esperando retorno <span className="lg lg-done" /> já
+                  retornou
+                </div>
+              </>
+            )}
+          </div>
+        )}
         {step &&
-          frames.map((f, i) => <FrameView key={f.id} frame={f} prev={prevFrames.get(f.id)} current={i === 0} />)}
+          frames.map((f, i) => (
+            <FrameView
+              key={f.id}
+              frame={f}
+              prev={prevFrames.get(f.id)}
+              current={i === 0}
+              context={context}
+              shownIds={shownBefore[i]}
+              focusCell={focusCell}
+            />
+          ))}
 
         {!step && (
           <div className="viz-final">
@@ -177,4 +227,8 @@ export function Visualizer({ trace, code, lang = 'js', onLine, title }: Props) {
       {view}
     </div>
   )
+}
+
+function callCountLabel(n: number) {
+  return n === 1 ? '1 chamada até aqui' : `${n} chamadas até aqui`
 }

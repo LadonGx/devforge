@@ -1,4 +1,4 @@
-import type { V } from './types'
+import type { TNode, V } from './types'
 
 const MAX_DEPTH = 5
 const MAX_ITEMS = 80
@@ -66,6 +66,8 @@ export function serialize(value: unknown, depth = 0, path: Set<object> = new Set
       return { t: 'set', id, items, size: obj.size }
     }
     if (obj instanceof Promise) return { t: 'promise', id }
+    if (isListNode(obj)) return serializeList(obj, depth)
+    if (isTreeNode(obj)) return serializeTree(obj, depth)
     const cls = obj.constructor && obj.constructor !== Object ? obj.constructor.name || '' : ''
     const entries: [string, V][] = []
     let i = 0
@@ -77,6 +79,73 @@ export function serialize(value: unknown, depth = 0, path: Set<object> = new Set
   } finally {
     path.delete(obj)
   }
+}
+
+const MAX_LIST = 40
+const MAX_TREE = 127
+
+type AnyNode = { val: unknown; next?: unknown; left?: unknown; right?: unknown }
+
+function isListNode(o: object): o is AnyNode {
+  return 'val' in o && 'next' in o && !('left' in o) && !('right' in o)
+}
+
+function isTreeNode(o: object): o is AnyNode {
+  return 'val' in o && ('left' in o || 'right' in o) && !('next' in o && !('left' in o))
+}
+
+function serializeList(head: AnyNode, depth: number): V {
+  const nodes: { id: number; val: V }[] = []
+  const index = new Map<object, number>()
+  let cur: unknown = head
+  let cycleTo: number | undefined
+  while (cur && typeof cur === 'object' && isListNode(cur as object)) {
+    const node = cur as AnyNode
+    if (index.has(node)) {
+      cycleTo = index.get(node)
+      break
+    }
+    if (nodes.length >= MAX_LIST) break
+    index.set(node, nodes.length)
+    nodes.push({ id: idOf(node), val: serialize(node.val, depth + 1) })
+    cur = node.next
+  }
+  const more = cycleTo === undefined && !!cur && nodes.length >= MAX_LIST
+  return { t: 'list', id: idOf(head), nodes, cycleTo, more }
+}
+
+function serializeTree(root: AnyNode, depth: number): V {
+  let count = 0
+  const seen = new Set<object>()
+  const walk = (n: unknown, d: number): TNode | null => {
+    if (!n || typeof n !== 'object' || !isTreeNode(n as object) || seen.has(n as object)) return null
+    const node = n as AnyNode
+    seen.add(node)
+    count++
+    const t: TNode = { id: idOf(node), val: serialize(node.val, depth + 1), left: null, right: null }
+    if (d >= 9 || count >= MAX_TREE) {
+      t.cut = !!(node.left || node.right)
+      return t
+    }
+    t.left = walk(node.left, d + 1)
+    t.right = walk(node.right, d + 1)
+    return t
+  }
+  const r = walk(root, 0)!
+  return { t: 'tree', id: idOf(root), root: r, count }
+}
+
+/** Árvore em ordem de nível (formato LeetCode), ex.: [3,9,20,null,null,15,7] */
+export function treeToLevelOrder(root: TNode | null): (V | null)[] {
+  const out: (V | null)[] = []
+  const q: (TNode | null)[] = [root]
+  while (q.length) {
+    const n = q.shift()!
+    out.push(n ? n.val : null)
+    if (n) q.push(n.left, n.right)
+  }
+  while (out.length && out[out.length - 1] === null) out.pop()
+  return out
 }
 
 /** Representação textual curta (estilo console). */
@@ -109,6 +178,10 @@ export function formatV(v: V | undefined, depth = 0): string {
       return (v.cls ? v.cls + ' ' : '') + '{' + v.entries.map(([k, x]) => `${k}: ${formatV(x, depth + 1)}`).join(', ') + '}'
     case 'promise':
       return 'Promise {…}'
+    case 'list':
+      return v.nodes.map((n) => formatV(n.val, depth + 1)).join(' → ') + (v.cycleTo !== undefined ? ' ↺' : v.more ? ' → …' : ' → null')
+    case 'tree':
+      return 'TreeNode [' + treeToLevelOrder(v.root).map((x) => (x ? formatV(x, depth + 1) : 'null')).join(',') + ']'
     case 'cycle':
       return '[Circular]'
     case 'deep':

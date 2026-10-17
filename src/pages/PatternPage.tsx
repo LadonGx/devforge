@@ -33,7 +33,7 @@ export function PatternPage() {
         <p className="text-2">{p.summary}</p>
       </div>
 
-      <LessonBlocks blocks={p.lesson} />
+      <LessonBlocks key={p.id} blocks={p.lesson} />
 
       <div className="lesson-done card">
         <div>
