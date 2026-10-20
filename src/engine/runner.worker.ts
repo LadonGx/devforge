@@ -61,10 +61,22 @@ function getFn(exported: unknown, fnName: string): (...a: unknown[]) => unknown 
 }
 
 /** Executa um caso: função comum ou problema de design (classe). */
+const harnessCache = new Map<string, (...a: unknown[]) => unknown>()
+
 async function execute(fn: (...a: unknown[]) => unknown, input: unknown[], io: IOSpec | undefined) {
+  if (io?.harness) {
+    let h = harnessCache.get(io.harness)
+    if (!h) {
+      h = new Function(`return (${io.harness})`)() as (...a: unknown[]) => unknown
+      harnessCache.set(io.harness, h)
+    }
+    let r = h(fn, ...structuredClone(input))
+    if (r instanceof Promise) r = await r
+    return r
+  }
   if (io?.design) {
     const [ops, args] = structuredClone(input) as [string[], unknown[][]]
-    return runDesign(fn, ops, args)
+    return runDesign(fn, ops, args, io.design === 'factory')
   }
   let r = fn(...buildArgs(io, input))
   if (r instanceof Promise) r = await r

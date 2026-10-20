@@ -202,13 +202,15 @@ export function convertResult(io: IOSpec | undefined, r: unknown): unknown {
 }
 
 /** Executa um problema de design: ops = ["Classe", "metodo", ...], args = [[...], [...]] */
-export function runDesign(Cls: unknown, ops: string[], args: unknown[][]): unknown[] {
-  const C = Cls as new (...a: unknown[]) => Record<string, (...a: unknown[]) => unknown>
+export function runDesign(Cls: unknown, ops: string[], args: unknown[][], factory = false): unknown[] {
+  type Obj = Record<string, (...a: unknown[]) => unknown>
+  const C = Cls as new (...a: unknown[]) => Obj
   const out: unknown[] = []
-  let obj: Record<string, (...a: unknown[]) => unknown> | null = null
+  let obj: Obj | null = null
   for (let i = 0; i < ops.length; i++) {
     if (i === 0) {
-      obj = new C(...(args[0] ?? []))
+      obj = factory ? (Cls as (...a: unknown[]) => Obj)(...(args[0] ?? [])) : new C(...(args[0] ?? []))
+      if (!obj || typeof obj !== 'object') throw new TypeError(`${ops[0]}(...) precisa retornar um objeto.`)
       out.push(null)
       continue
     }

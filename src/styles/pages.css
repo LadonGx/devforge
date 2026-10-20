@@ -1127,3 +1127,270 @@ div.case-row {
   letter-spacing: 0.07em;
   color: var(--muted);
 }
+.course-intro {
+  max-width: 680px;
+}
+
+/* ---------- Widgets das aulas ---------- */
+.quiz,
+.lab,
+.pipeline {
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  background: var(--panel);
+  padding: 14px 16px;
+  margin: 6px 0 20px;
+}
+.quiz-head,
+.lab-head {
+  display: flex;
+  gap: 10px;
+  align-items: flex-start;
+  margin-bottom: 10px;
+}
+.quiz-q p {
+  margin: 0;
+  font-weight: 600;
+}
+.quiz-options {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+.quiz-opt {
+  border: 1.5px solid var(--border-2);
+  background: var(--panel-2);
+  border-radius: 8px;
+  padding: 7px 14px;
+  cursor: pointer;
+  font-size: 14px;
+}
+.quiz-opt:hover:not(:disabled) {
+  border-color: var(--accent);
+}
+.quiz-opt code {
+  background: none;
+  border: none;
+  padding: 0;
+}
+.quiz-opt:disabled {
+  cursor: default;
+  opacity: 0.75;
+}
+.quiz-opt.is-answer {
+  border-color: var(--ok);
+  background: var(--ok-bg);
+  opacity: 1;
+}
+.quiz-opt.is-wrong {
+  border-color: var(--bad);
+  background: var(--bad-bg);
+  opacity: 1;
+}
+.quiz-explain {
+  margin-top: 12px;
+  padding: 10px 12px;
+  border-radius: 8px;
+  background: var(--panel-2);
+  font-size: 14px;
+}
+.quiz-right .quiz-explain {
+  background: var(--ok-bg);
+}
+.quiz-wrong .quiz-explain {
+  background: var(--warn-bg);
+}
+
+.lab-controls {
+  display: flex;
+  gap: 10px;
+  align-items: center;
+  flex-wrap: wrap;
+}
+.lab-select {
+  font-family: var(--mono);
+  min-width: 110px;
+}
+.lab-ops button {
+  font-family: var(--mono);
+  min-width: 44px;
+}
+.lab-expr {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin: 14px 0 8px;
+  font-size: 18px;
+  flex-wrap: wrap;
+}
+.lab-expr code {
+  font-size: 17px;
+  padding: 4px 10px;
+}
+.lab-arrow {
+  color: var(--muted);
+}
+.lab-result {
+  font-weight: 800;
+}
+.lab-result.is-true {
+  color: var(--ok);
+}
+.lab-result.is-false {
+  color: var(--bad);
+}
+.lab-steps {
+  margin: 0 0 12px;
+  padding-left: 1.4em;
+  font-family: var(--mono);
+  font-size: 13px;
+}
+.lab-steps li {
+  margin: 4px 0;
+}
+.lab-truthy {
+  border-top: 1px solid var(--border);
+  padding-top: 10px;
+}
+.truthy-grid {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-bottom: 8px;
+}
+.truthy-chip {
+  border-radius: 999px;
+  padding: 2px 10px;
+  font-size: 12px;
+  border: 1px solid;
+}
+.truthy-chip code {
+  background: none;
+  border: none;
+  padding: 0;
+}
+.truthy-chip.is-truthy {
+  color: var(--ok);
+  border-color: color-mix(in srgb, var(--ok) 40%, transparent);
+  background: var(--ok-bg);
+}
+.truthy-chip.is-falsy {
+  color: var(--bad);
+  border-color: color-mix(in srgb, var(--bad) 40%, transparent);
+  background: var(--bad-bg);
+}
+
+.pipe-controls {
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  margin-bottom: 12px;
+}
+.pipe-row {
+  display: flex;
+  gap: 0;
+  overflow-x: auto;
+  align-items: flex-start;
+  padding-bottom: 4px;
+}
+.pipe-stage {
+  position: relative;
+  min-width: 190px;
+  max-width: 260px;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 10px;
+  margin-left: 28px;
+  background: var(--panel-2);
+  flex-shrink: 0;
+}
+.pipe-stage.pipe-input {
+  margin-left: 0;
+  min-width: 120px;
+}
+.pipe-stage.active {
+  border-color: var(--accent);
+  box-shadow: 0 0 0 3px var(--accent-bg);
+}
+.pipe-stage.finished {
+  border-color: color-mix(in srgb, var(--ok) 50%, var(--border));
+}
+.pipe-arrow {
+  position: absolute;
+  left: -22px;
+  top: 12px;
+  color: var(--muted);
+  font-weight: 800;
+}
+.pipe-title {
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--text-2);
+  margin-bottom: 8px;
+}
+.pipe-title code {
+  font-size: 12px;
+}
+.pipe-rows {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+.pipe-item {
+  font-family: var(--mono);
+  font-size: 12px;
+  padding: 3px 8px;
+  border-radius: 6px;
+  background: var(--panel);
+  border: 1px solid var(--border);
+}
+.pipe-item.current {
+  border-color: var(--accent);
+  background: var(--accent-bg);
+}
+.pipe-item.dropped {
+  color: var(--bad);
+  text-decoration: line-through;
+  opacity: 0.75;
+}
+.pipe-item.stop {
+  border-color: var(--ok);
+}
+.pipe-out {
+  margin-top: 8px;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+.pipe-array {
+  font-size: 12.5px;
+  font-weight: 700;
+  word-break: break-word;
+}
+
+/* evita estouro horizontal em telas pequenas */
+.lesson > * {
+  min-width: 0;
+  max-width: 100%;
+}
+.nav {
+  min-width: 0;
+  overflow-x: auto;
+  scrollbar-width: none;
+}
+.nav::-webkit-scrollbar {
+  display: none;
+}
+.nav a {
+  white-space: nowrap;
+}
+.pager {
+  gap: 10px;
+}
+.pager .btn {
+  white-space: normal;
+  max-width: 48%;
+  text-align: left;
+}
+.viz-with-code > * {
+  min-width: 0;
+}

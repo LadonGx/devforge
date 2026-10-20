@@ -1,6 +1,6 @@
 import { Link } from 'react-router-dom'
 import { MODULES, TRAILS, VOLUMES } from '../content/modules'
-import { PROBLEMS } from '../content/leetcode'
+import { COURSES } from '../content/courses'
 import { useProgress } from '../lib/progress'
 import { moduleProgress, nextAction, stepStatus } from '../lib/stats'
 import type { ModuleInfo } from '../content/types'
@@ -24,7 +24,7 @@ export function Home() {
           <div className="hero-stats">
             <div className="stat">
               <span className="stat-num">{solved}</span>
-              <span className="stat-label">problemas resolvidos de {PROBLEMS.length}</span>
+              <span className="stat-label">exercícios resolvidos de {COURSES.reduce((n, c) => n + c.problems.length, 0)}</span>
             </div>
             <div className="stat">
               <span className="stat-num">{lessons}</span>
@@ -39,7 +39,7 @@ export function Home() {
           </div>
         </div>
         <Link to={next.to} className="continue-card">
-          <span className="continue-kicker">Próximo passo sugerido</span>
+          <span className="continue-kicker">Próximo passo sugerido{next.course ? ` · ${next.course}` : ''}</span>
           <span className="continue-title">{next.label}</span>
           <span className="continue-detail">{next.detail}</span>
           <span className="continue-go">Continuar →</span>

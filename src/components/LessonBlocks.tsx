@@ -4,6 +4,9 @@ import type { TraceResult } from '../engine/types'
 import { runTrace } from '../engine/runner'
 import { CodeBlock, Markdown } from './Markdown'
 import { Visualizer } from './viz/Visualizer'
+import { Quiz } from './widgets/Quiz'
+import { CoercionLab } from './widgets/CoercionLab'
+import { Pipeline } from './widgets/Pipeline'
 
 function Demo({ block }: { block: Extract<Block, { type: 'demo' }> }) {
   const [trace, setTrace] = useState<TraceResult | null>(null)
@@ -71,6 +74,12 @@ export function LessonBlocks({ blocks }: { blocks: Block[] }) {
             )
           case 'demo':
             return <Demo key={i} block={b} />
+          case 'quiz':
+            return <Quiz key={i} question={b.question} code={b.code} options={b.options} answer={b.answer} explain={b.explain} />
+          case 'coercion':
+            return <CoercionLab key={i} title={b.title} />
+          case 'pipeline':
+            return <Pipeline key={i} title={b.title} caption={b.caption} input={b.input} stages={b.stages} />
         }
       })}
     </div>

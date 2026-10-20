@@ -24,6 +24,7 @@ O progresso (problemas resolvidos, aulas concluídas e o código que você escre
 ## O que já existe
 
 - **Vitrine** com os módulos separados por volume (JavaScript → TypeScript → Node/Web → Arquitetura → React + CSS) e **trilhas sugeridas**.
+- **Fundamentos de JavaScript** (`/js`): 7 aulas e 21 exercícios: tipos e coerção, escopo/hoisting/closures, `this` e bind, métodos de array, objetos/referências/imutabilidade, Map e Set, desestruturação/spread/`?.`/`??`. As aulas têm perguntas rápidas, um **laboratório de coerção** (mostra cada regra que o `==` e o `+` aplicam) e um **pipeline de arrays** animado (map → filter → reduce elemento por elemento).
 - **Módulo LeetCode / NeetCode** com 11 padrões e 37 problemas, cada padrão com aula + animação:
   - parte 1: Arrays & Hashing, Two Pointers, Sliding Window, Stack, Binary Search;
   - parte 2: Linked List, Trees, Heap / Priority Queue, Backtracking, Graphs, 1-D DP.
@@ -34,7 +35,7 @@ O progresso (problemas resolvidos, aulas concluídas e o código que você escre
   - testes rodando num Web Worker isolado (loop infinito não trava a página);
   - diff visual do caso que falhou + diagnóstico em português ("retornou undefined", "tamanho diferente"...);
   - teste de desempenho com entrada grande (Time Limit Exceeded quando a solução é O(n²));
-  - **visualizador passo a passo** do seu código e da solução de referência: linha atual no editor, variáveis que mudaram, ponteiros (`i`, `l`, `r`, `lo`, `hi`, `mid`...) desenhados sob o array, janela `[l, r]`, Map/Set como tabela, pilha na vertical, listas ligadas com setas, árvores desenhadas, heap como árvore, fila de BFS e a **árvore de chamadas** da recursão (backtracking, DFS, memoização);
+  - **visualizador passo a passo** do seu código (variáveis de closure aparecem com ↑ e variáveis que apontam para o mesmo objeto são marcadas como "mesma referência") e da solução de referência: linha atual no editor, variáveis que mudaram, ponteiros (`i`, `l`, `r`, `lo`, `hi`, `mid`...) desenhados sob o array, janela `[l, r]`, Map/Set como tabela, pilha na vertical, listas ligadas com setas, árvores desenhadas, heap como árvore, fila de BFS e a **árvore de chamadas** da recursão (backtracking, DFS, memoização);
   - dicas progressivas e solução explicada (intuição, passo a passo, complexidade, erros comuns).
 
 ## Estrutura
@@ -47,22 +48,29 @@ src/
     instrument.ts      instrumenta o código (acorn) para gerar o passo a passo
     serialize.ts       snapshot de qualquer valor JS para o visualizador
     compare.ts         comparação de resultados (exata, sem ordem...)
-  components/viz/    visualizador (arrays, matriz, Map, Set, pilha, frames)
+  components/viz/    visualizador (arrays, matriz, Map, Set, pilha, listas, árvores, heap, chamadas)
+  components/widgets/ quiz, laboratório de coerção, pipeline de arrays
   content/
     modules.ts         catálogo de módulos, volumes e trilhas
+    courses.ts         registro dos cursos (rotas, aulas, exercícios)
+    js/                Fundamentos de JS (aulas e exercícios)
     leetcode/          padrões (aulas) e problemas
   pages/             telas (vitrine, trilhas, módulo, aula, problema)
 scripts/validate-content.ts
 ```
 
-## Como adicionar um problema
+## Como adicionar conteúdo
 
-1. Crie o objeto `Problem` em `src/content/leetcode/problems/<padrão>.ts` (enunciado, testes, dicas, explicação, solução JS e TS, `perf` opcional).
-2. Registre em `src/content/leetcode/index.ts` e adicione o `id` na lista `problems` do padrão em `patterns.ts`.
+Os módulos com aulas e exercícios são **cursos** registrados em `src/content/courses.ts` (hoje: `js-fundamentos` em `src/content/js/` e `leetcode` em `src/content/leetcode/`).
+
+1. Crie o objeto `Problem` (enunciado, testes, dicas, explicação, solução JS e TS, `perf` opcional) no arquivo de problemas do curso.
+2. Registre no `index.ts` do curso e adicione o `id` na lista `problems` da aula/padrão.
 3. Rode `npm run validate`.
+
+Para testar funções de alta ordem, closures ou imutabilidade, use `io.harness`: o código de uma função `(funcaoDoUsuario, ...entrada) => resultado` que monta o cenário do teste (veja `src/content/js/problems1.ts`).
 
 > Os geradores de `perf.gen` são enviados como texto para o worker: precisam ser autocontidos (não podem usar variáveis de fora da função).
 
 ## Próximas features
 
-Fundamentos de JS → Assincronismo (event loop visual) → TypeScript com checagem de tipos → HTTP/REST, JWT, OAuth2 → SOLID, Clean Code, Clean Architecture → React + CSS.
+Assincronismo (event loop visual) → TypeScript com checagem de tipos → HTTP/REST, JWT, OAuth2 → SOLID, Clean Code, Clean Architecture → React + CSS.

@@ -2,8 +2,9 @@ import { NavLink, Link, Route, Routes, useLocation } from 'react-router-dom'
 import { useEffect } from 'react'
 import { Home } from './pages/Home'
 import { TrailsPage } from './pages/Trails'
-import { LeetCodeHome } from './pages/LeetCodeHome'
-import { PatternPage } from './pages/PatternPage'
+import { CourseHome } from './pages/CourseHome'
+import { UnitPage } from './pages/UnitPage'
+import { COURSES } from './content/courses'
 import { ProblemPage } from './pages/ProblemPage'
 import { ModuleSoon } from './pages/ModuleSoon'
 import { toggleTheme, useTheme } from './lib/theme'
@@ -22,7 +23,7 @@ function ScrollTop() {
 export default function App() {
   const theme = useTheme()
   const { pathname } = useLocation()
-  const wide = pathname.startsWith('/leetcode/p/')
+  const wide = /^\/[^/]+\/p\/[^/]+$/.test(pathname)
   return (
     <div className="app">
       <ScrollTop />
@@ -36,6 +37,7 @@ export default function App() {
             Vitrine
           </NavLink>
           <NavLink to="/trilhas">Trilhas</NavLink>
+          <NavLink to="/js">Fundamentos JS</NavLink>
           <NavLink to="/leetcode">LeetCode</NavLink>
         </nav>
         <div className="topbar-right">
@@ -49,9 +51,11 @@ export default function App() {
         <Routes>
           <Route path="/" element={<Home />} />
           <Route path="/trilhas" element={<TrailsPage />} />
-          <Route path="/leetcode" element={<LeetCodeHome />} />
-          <Route path="/leetcode/padrao/:id" element={<PatternPage />} />
-          <Route path="/leetcode/p/:id" element={<ProblemPage />} />
+          {COURSES.flatMap((c) => [
+            <Route key={c.id} path={c.basePath} element={<CourseHome course={c} />} />,
+            <Route key={c.id + '-u'} path={`${c.basePath}/${c.unitSegment}/:id`} element={<UnitPage course={c} />} />,
+            <Route key={c.id + '-p'} path={`${c.basePath}/p/:id`} element={<ProblemPage course={c} />} />,
+          ])}
           <Route path="/modulo/:id" element={<ModuleSoon />} />
           <Route
             path="*"

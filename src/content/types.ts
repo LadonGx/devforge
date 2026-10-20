@@ -10,13 +10,26 @@ export type Block =
   | { type: 'signals'; title?: string; items: string[] }
   | { type: 'demo'; title: string; code: string; fnName: string; input: unknown[]; caption?: string; io?: IOSpec }
   | { type: 'compare'; left: { title: string; md: string }; right: { title: string; md: string } }
+  | { type: 'quiz'; question: string; code?: string; options: string[]; answer: number; explain: string }
+  | { type: 'coercion'; title?: string }
+  | { type: 'pipeline'; title: string; caption?: string; input: unknown[]; stages: PipelineStage[] }
+
+export interface PipelineStage {
+  op: 'map' | 'filter' | 'reduce' | 'find' | 'some' | 'every' | 'sort'
+  /** código mostrado na tela, ex.: "x => x * 2" */
+  code: string
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  fn: (...args: any[]) => unknown
+  initial?: unknown
+}
 
 export interface Problem {
   id: string
   title: string
   difficulty: Difficulty
   pattern: string
-  leetcode: { number: number; slug: string }
+  /** referência ao problema original do LeetCode (opcional) */
+  leetcode?: { number: number; slug: string }
   fnName: string
   params: string[]
   description: string
@@ -76,4 +89,21 @@ export interface Trail {
   title: string
   summary: string
   steps: TrailStep[]
+}
+
+/** Um curso = módulo com aulas (unidades) e exercícios práticos. */
+export interface Course {
+  id: string // mesmo id do módulo na vitrine
+  title: string
+  basePath: string // ex.: '/leetcode', '/js'
+  unitSegment: string // ex.: 'padrao', 'aula'
+  unitLabel: string // ex.: 'Padrão', 'Aula'
+  volumeLabel: string
+  intro: string
+  how: { title: string; text: string }[]
+  units: Pattern[]
+  problems: Problem[]
+  /** id da unidade → título da parte que começa nela */
+  parts?: Record<string, string>
+  soonNote?: string
 }

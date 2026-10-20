@@ -36,31 +36,76 @@ export function CodeBlock({ code, caption }: { code: string; caption?: string })
   )
 }
 
-/** Inline: `code`, **negrito**, *itálico*, [link](url) */
-export function inline(text: string): ReactNode[] {
-  const re = /(`[^`]+`)|(\*\*[^*]+\*\*)|(\*[^*\s][^*]*\*)|(\[[^\]]+\]\([^)]+\))/g
-  const out: ReactNode[] = []
-  let last = 0
-  let m: RegExpExecArray | null
-  let i = 0
-  while ((m = re.exec(text))) {
-    if (m.index > last) out.push(text.slice(last, m.index))
-    const tok = m[0]
-    if (m[1]) out.push(<code key={i++}>{tok.slice(1, -1)}</code>)
-    else if (m[2]) out.push(<strong key={i++}>{inline(tok.slice(2, -2))}</strong>)
-    else if (m[3]) out.push(<em key={i++}>{inline(tok.slice(1, -1))}</em>)
-    else if (m[4]) {
-      const mm = /\[([^\]]+)\]\(([^)]+)\)/.exec(tok)!
-      const external = /^https?:/.test(mm[2])
-      out.push(
-        <a key={i++} href={mm[2]} target={external ? '_blank' : undefined} rel={external ? 'noreferrer' : undefined}>
-          {mm[1]}
-        </a>,
-      )
+/** Procura `marker` a partir de `from`, pulando trechos de `código` (onde * não formata). */
+function findClosing(text: string, marker: string, from: number): number {
+  let i = from
+  while (i < text.length) {
+    if (text[i] === '`') {
+      const close = text.indexOf('`', i + 1)
+      if (close < 0) return -1
+      i = close + 1
+      continue
     }
-    last = re.lastIndex
+    if (text.startsWith(marker, i) && (marker !== '*' || text[i + 1] !== '*')) return i
+    i++
   }
-  if (last < text.length) out.push(text.slice(last))
+  return -1
+}
+
+/** Inline: `code`, **negrito**, *itálico*, [link](url). Código tem prioridade (um * dentro de `...` é literal). */
+export function inline(text: string): ReactNode[] {
+  const out: ReactNode[] = []
+  let buf = ''
+  let k = 0
+  const flush = () => {
+    if (buf) out.push(buf)
+    buf = ''
+  }
+  let i = 0
+  while (i < text.length) {
+    const ch = text[i]
+    if (ch === '`') {
+      const close = text.indexOf('`', i + 1)
+      if (close > i + 1) {
+        flush()
+        out.push(<code key={k++}>{text.slice(i + 1, close)}</code>)
+        i = close + 1
+        continue
+      }
+    } else if (text.startsWith('**', i)) {
+      const close = findClosing(text, '**', i + 2)
+      if (close > i + 2) {
+        flush()
+        out.push(<strong key={k++}>{inline(text.slice(i + 2, close))}</strong>)
+        i = close + 2
+        continue
+      }
+    } else if (ch === '*' && text[i + 1] && !/\s/.test(text[i + 1])) {
+      const close = findClosing(text, '*', i + 1)
+      if (close > i + 1) {
+        flush()
+        out.push(<em key={k++}>{inline(text.slice(i + 1, close))}</em>)
+        i = close + 1
+        continue
+      }
+    } else if (ch === '[') {
+      const m = /^\[([^\]]+)\]\(([^)]+)\)/.exec(text.slice(i))
+      if (m) {
+        flush()
+        const external = /^https?:/.test(m[2])
+        out.push(
+          <a key={k++} href={m[2]} target={external ? '_blank' : undefined} rel={external ? 'noreferrer' : undefined}>
+            {m[1]}
+          </a>,
+        )
+        i += m[0].length
+        continue
+      }
+    }
+    buf += ch
+    i++
+  }
+  flush()
   return out
 }
 

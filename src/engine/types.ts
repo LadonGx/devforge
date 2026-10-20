@@ -33,8 +33,13 @@ export type ArgType = 'raw' | 'list' | 'tree' | 'cycleList'
 export interface IOSpec {
   args?: ArgType[]
   ret?: 'raw' | 'list' | 'tree'
-  /** problema de "design": fnName é uma classe; input = [ops, args] */
-  design?: boolean
+  /** problema de "design": fnName é uma classe (ou 'factory': função que retorna o objeto); input = [ops, args] */
+  design?: boolean | 'factory'
+  /**
+   * Código JS de uma função `(fnDoUsuario, ...entrada) => resultado` que monta o teste.
+   * Serve para testar funções de alta ordem, closures, imutabilidade etc.
+   */
+  harness?: string
 }
 
 /** Uma chamada de função registrada durante o trace (para a árvore de chamadas). */

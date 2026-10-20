@@ -3,7 +3,7 @@
  * também em modo instrumentado (visualizador), e os demos das aulas.
  * Uso: npm run validate
  */
-import { PROBLEMS, PATTERNS } from '../src/content/leetcode/index'
+import { COURSES } from '../src/content/courses'
 import { compareResult } from '../src/engine/compare'
 import { instrument } from '../src/engine/instrument'
 import { GLOBALS, buildArgs, convertResult, runDesign } from '../src/engine/ds'
@@ -21,14 +21,21 @@ function compile(code: string, name: string, withHooks = false): (...a: unknown[
 }
 
 function exec(fn: (...a: unknown[]) => unknown, input: unknown[], io?: IOSpec) {
+  if (io?.harness) {
+    const h = new Function(`return (${io.harness})`)() as (...a: unknown[]) => unknown
+    return h(fn, ...structuredClone(input))
+  }
   if (io?.design) {
     const [ops, args] = structuredClone(input) as [string[], unknown[][]]
-    return runDesign(fn, ops, args)
+    return runDesign(fn, ops, args, io.design === 'factory')
   }
   return convertResult(io, fn(...buildArgs(io, input)))
 }
 
 const ts = (code: string) => transform(code, { transforms: ['typescript'], disableESTransforms: true }).code
+
+const PROBLEMS = COURSES.flatMap((c) => c.problems)
+const PATTERNS = COURSES.flatMap((c) => c.units)
 
 let fails = 0
 const ids = new Set<string>()
@@ -96,5 +103,5 @@ for (const pat of PATTERNS) {
     }
   }
 }
-console.log(`\n${fails === 0 ? 'OK' : 'FALHAS: ' + fails} · ${PROBLEMS.length} problemas · ${PATTERNS.length} padrões`)
+console.log(`\n${fails === 0 ? 'OK' : 'FALHAS: ' + fails} · ${PROBLEMS.length} exercícios · ${PATTERNS.length} aulas · ${COURSES.length} cursos`)
 if (fails) process.exit(1)

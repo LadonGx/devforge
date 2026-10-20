@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { Link, useParams } from 'react-router-dom'
-import { PROBLEMS, patternById, problemById } from '../content/leetcode'
-import type { Problem } from '../content/types'
+import type { Course, Problem } from '../content/types'
+import { problemPath, unitPath } from '../content/courses'
 import type { Lang, PerfResult, TraceResult } from '../engine/types'
 import { runPerf, runTests, runTrace, type TestRun } from '../engine/runner'
 import { progress, useProgress } from '../lib/progress'
@@ -15,21 +15,21 @@ import { PerfPanel } from '../components/problem/PerfPanel'
 type LeftTab = 'desc' | 'hints' | 'solution'
 type BottomTab = 'tests' | 'viz' | 'perf'
 
-export function ProblemPage() {
+export function ProblemPage({ course }: { course: Course }) {
   const { id = '' } = useParams()
-  const p = problemById(id)
+  const p = course.problems.find((x) => x.id === id)
   if (!p) {
     return (
       <div className="empty-state">
-        <h2>Problema não encontrado</h2>
-        <Link to="/leetcode">Voltar</Link>
+        <h2>Exercício não encontrado</h2>
+        <Link to={course.basePath}>Voltar</Link>
       </div>
     )
   }
-  return <ProblemWorkspace key={p.id} p={p} />
+  return <ProblemWorkspace key={p.id} p={p} course={course} />
 }
 
-function ProblemWorkspace({ p }: { p: Problem }) {
+function ProblemWorkspace({ p, course }: { p: Problem; course: Course }) {
   const s = useProgress()
   const lang = s.lang
   const initial = progress.get().code[`${p.id}:${lang}`] ?? p.starter[lang]
@@ -64,9 +64,9 @@ function ProblemWorkspace({ p }: { p: Problem }) {
     return () => clearTimeout(t)
   }, [code, lang, p])
 
-  const pattern = patternById(p.pattern)
-  const idx = PROBLEMS.indexOf(p)
-  const nextProblem = PROBLEMS[idx + 1]
+  const pattern = course.units.find((u) => u.id === p.pattern)
+  const idx = course.problems.indexOf(p)
+  const nextProblem = course.problems[idx + 1]
   const solved = !!s.solved[p.id]
 
   const onRunTests = useCallback(async () => {
@@ -154,19 +154,21 @@ function ProblemWorkspace({ p }: { p: Problem }) {
       <aside className="problem-left">
         <div className="problem-head">
           <div className="breadcrumb" style={{ marginBottom: 6 }}>
-            <Link to="/leetcode">LeetCode</Link> /{' '}
-            {pattern && <Link to={`/leetcode/padrao/${pattern.id}`}>{pattern.title}</Link>}
+            <Link to={course.basePath}>{course.title}</Link> /{' '}
+            {pattern && <Link to={unitPath(course, pattern.id)}>{pattern.title}</Link>}
           </div>
           <h1 className="problem-title">
             {p.title} {solved && <span className="badge badge-ok">Resolvido ✓</span>}
           </h1>
           <div className="row" style={{ flexWrap: 'wrap', gap: 8 }}>
             <DifficultyBadge d={p.difficulty} />
-            <a className="badge" href={`https://leetcode.com/problems/${p.leetcode.slug}/`} target="_blank" rel="noreferrer">
-              LeetCode #{p.leetcode.number} ↗
-            </a>
+            {p.leetcode && (
+              <a className="badge" href={`https://leetcode.com/problems/${p.leetcode.slug}/`} target="_blank" rel="noreferrer">
+                LeetCode #{p.leetcode.number} ↗
+              </a>
+            )}
             {pattern && (
-              <Link className="badge" to={`/leetcode/padrao/${pattern.id}`} style={{ color: pattern.color }}>
+              <Link className="badge" to={unitPath(course, pattern.id)} style={{ color: pattern.color }}>
                 📖 Aula: {pattern.title}
               </Link>
             )}
@@ -199,6 +201,8 @@ function ProblemWorkspace({ p }: { p: Problem }) {
                   {ex.explanation && <div className="example-line muted">{ex.explanation}</div>}
                 </div>
               ))}
+              {p.constraints.length > 0 && (
+                <>
               <h4>Restrições</h4>
               <ul className="constraints">
                 {p.constraints.map((c) => (
@@ -207,6 +211,8 @@ function ProblemWorkspace({ p }: { p: Problem }) {
                   </li>
                 ))}
               </ul>
+                </>
+              )}
             </>
           )}
 
@@ -366,6 +372,7 @@ function ProblemWorkspace({ p }: { p: Problem }) {
                 onVisualize={(i) => onTrace('user', i)}
                 onPerf={() => setBottomTab('perf')}
                 nextProblem={nextProblem}
+                nextPath={nextProblem ? problemPath(course, nextProblem.id) : undefined}
               />
             )}
             {bottomTab === 'viz' && (

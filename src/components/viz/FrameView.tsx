@@ -125,8 +125,11 @@ export function FrameView({ frame, prev, current, context = [], shownIds, focusC
 
   const scalars: [string, V][] = []
   const structs: [string, V][] = []
+  // duas variáveis apontando para o mesmo objeto: desenha uma vez só e avisa
+  const firstById = new Map<number, string>()
+  const aliases = new Map<string, string[]>()
   for (const [n, v] of vars) {
-    const isStr = v.t === 's' && pointerTargets.has(n)
+    const isStr = v.t === 's' && pointerTargets.has(n) && (pointerVars.length > 0 || frame.params.includes(n))
     if (isLinked(v)) {
       if (!current) scalars.push([n, { t: 's', v: shortNode(v) }])
       continue
@@ -136,9 +139,22 @@ export function FrameView({ frame, prev, current, context = [], shownIds, focusC
       scalars.push([n, { t: 's', v: `${summary(v)} ↑ mesmo objeto` }])
       continue
     }
+    if (sid !== undefined) {
+      const first = firstById.get(sid)
+      if (first !== undefined) {
+        aliases.set(first, [...(aliases.get(first) ?? []), n])
+        continue
+      }
+      firstById.set(sid, n)
+    }
     if (v.t === 'arr' || v.t === 'map' || v.t === 'set' || v.t === 'obj' || isStr) structs.push([n, v])
     else scalars.push([n, v])
   }
+  const label = (n: string) => {
+    const a = aliases.get(n)
+    return a ? `${n} = ${a.join(' = ')} (mesma referência)` : n
+  }
+  const hasClosure = vars.some(([n]) => n.startsWith('↑'))
   const allPtrNames = [...linkedGroups.values()].flatMap((g) => g.names)
 
   return (
@@ -148,6 +164,7 @@ export function FrameView({ frame, prev, current, context = [], shownIds, focusC
         {!current && <span className="muted"> aguardando retorno da chamada acima</span>}
       </div>
       {vars.length === 0 && <div className="muted frame-empty">sem variáveis ainda</div>}
+      {hasClosure && current && <div className="closure-note muted">↑ = variável do escopo externo, capturada por closure</div>}
       {scalars.length > 0 && (
         <div className="scalars">
           {scalars.map(([n, v]) => {
@@ -158,7 +175,7 @@ export function FrameView({ frame, prev, current, context = [], shownIds, focusC
             const isPtr = pointerNames.includes(n)
             return (
               <div key={n} className={'scalar' + (changed ? ' changed' : '') + (isPtr ? ' is-ptr' : '')}>
-                <span className="scalar-name">{n}</span>
+                <span className={'scalar-name' + (n.startsWith('↑') ? ' is-closure' : '')}>{n}</span>
                 <span className="scalar-val">{summarized && v.t === 's' ? v.v : formatV(v)}</span>
                 {changed && p && <span className="scalar-prev">era {formatV(p)}</span>}
               </div>
@@ -188,7 +205,7 @@ export function FrameView({ frame, prev, current, context = [], shownIds, focusC
             return (
               <div key={n} className="heapv">
                 <div className="viz-label">
-                  {n} <span className="muted">{v.t === 'obj' ? v.cls : 'heap'} ({heapArr.len}) · topo = raiz</span>
+                  {label(n)} <span className="muted">{v.t === 'obj' ? v.cls : 'heap'} ({heapArr.len}) · topo = raiz</span>
                 </div>
                 <div className="heap-row">
                   <TreeView root={heapToTree(heapArr.items)} labels={new Map()} allNames={[]} highlight={new Set(heapArr.items.length ? [-1] : [])} />
@@ -199,15 +216,15 @@ export function FrameView({ frame, prev, current, context = [], shownIds, focusC
           }
           if (v.t === 'arr' && QUEUE_RE.test(n) && !isMatrix(v)) {
             return (
-              <ArrayView key={n} name={`${n} · fila (frente à esquerda)`} items={v.items} len={v.len} prev={prev && p0?.t === 'arr' ? p0.items : undefined} />
+              <ArrayView key={n} name={`${label(n)} · fila (frente à esquerda)`} items={v.items} len={v.len} prev={prev && p0?.t === 'arr' ? p0.items : undefined} />
             )
           }
           const p = prevVars.get(n)
           if (v.t === 'arr' && isMatrix(v)) {
-            return <MatrixView key={n} name={n} rows={v.items} prev={p?.t === 'arr' ? p.items : undefined} cell={cell} />
+            return <MatrixView key={n} name={label(n)} rows={v.items} prev={p?.t === 'arr' ? p.items : undefined} cell={cell} />
           }
           if (v.t === 'arr' && STACK_RE.test(n)) {
-            return <StackView key={n} name={n} items={v.items} len={v.len} prev={p?.t === 'arr' ? p.items : undefined} />
+            return <StackView key={n} name={label(n)} items={v.items} len={v.len} prev={p?.t === 'arr' ? p.items : undefined} />
           }
           if (v.t === 'arr' || v.t === 's') {
             const items: V[] = v.t === 'arr' ? v.items : [...v.v].map((c) => ({ t: 's', v: c }) as V)
@@ -217,7 +234,7 @@ export function FrameView({ frame, prev, current, context = [], shownIds, focusC
             return (
               <ArrayView
                 key={n}
-                name={v.t === 's' ? `${n} (string)` : n}
+                name={v.t === 's' ? `${n} (string)` : label(n)}
                 items={items}
                 len={len}
                 prev={prev ? prevItems : undefined}
@@ -228,13 +245,13 @@ export function FrameView({ frame, prev, current, context = [], shownIds, focusC
               />
             )
           }
-          if (v.t === 'map') return <MapView key={n} name={n} entries={v.entries} size={v.size} prev={prev ? (p?.t === 'map' ? p.entries : []) : undefined} />
-          if (v.t === 'set') return <SetView key={n} name={n} items={v.items} size={v.size} prev={prev ? (p?.t === 'set' ? p.items : []) : undefined} />
+          if (v.t === 'map') return <MapView key={n} name={label(n)} entries={v.entries} size={v.size} prev={prev ? (p?.t === 'map' ? p.entries : []) : undefined} />
+          if (v.t === 'set') return <SetView key={n} name={label(n)} items={v.items} size={v.size} prev={prev ? (p?.t === 'set' ? p.items : []) : undefined} />
           if (v.t === 'obj')
             return (
               <MapView
                 key={n}
-                name={n}
+                name={label(n)}
                 kind={v.cls || 'Object'}
                 entries={v.entries}
                 prev={prev ? (p?.t === 'obj' ? p.entries : []) : undefined}

@@ -14,6 +14,7 @@ interface Props {
   onVisualize: (caseIdx: number) => void
   onPerf: () => void
   nextProblem?: Problem
+  nextPath?: string
 }
 
 const typeName = (v: V) =>
@@ -31,6 +32,18 @@ function diagnose(expected: V, got: V | undefined, ordered: boolean): string | n
       if (i >= 0) return `Primeira diferença no índice **${i}**: esperado \`${formatV(expected.items[i])}\`, recebido \`${formatV(got.items[i])}\`.`
     }
     return 'Os elementos não batem (a ordem não importa neste problema).'
+  }
+  if (expected.t === 'obj' && got.t === 'obj') {
+    const gotMap = new Map(got.entries)
+    const expMap = new Map(expected.entries)
+    const diffs: string[] = []
+    for (const [k, ev] of expected.entries) {
+      const gv = gotMap.get(k)
+      if (!gv) diffs.push(`falta a chave \`${k}\``)
+      else if (!sameV(ev, gv)) diffs.push(`\`${k}\`: esperado \`${formatV(ev)}\`, recebido \`${formatV(gv)}\``)
+    }
+    for (const [k] of got.entries) if (!expMap.has(k)) diffs.push(`chave a mais: \`${k}\``)
+    if (diffs.length) return 'Diferenças: ' + diffs.join('; ') + '.'
   }
   return `Esperado \`${formatV(expected)}\`, recebido \`${formatV(got)}\`.`
 }
@@ -52,7 +65,7 @@ function inlineMd(text: string) {
   )
 }
 
-export function TestsPanel({ p, run, perf, busy, onVisualize, onPerf, nextProblem }: Props) {
+export function TestsPanel({ p, run, perf, busy, onVisualize, onPerf, nextProblem, nextPath }: Props) {
   const [open, setOpen] = useState<number | null>(null)
   const ordered = (p.compare ?? 'exact') === 'exact' || p.compare === 'float'
 
@@ -149,8 +162,8 @@ export function TestsPanel({ p, run, perf, busy, onVisualize, onPerf, nextProble
             <div className="row" style={{ marginTop: 10, flexWrap: 'wrap' }}>
               <span className="small text-2">Próximo passo: revise a solução explicada e compare com a sua.</span>
               <span className="spacer" />
-              {nextProblem && (
-                <Link to={`/leetcode/p/${nextProblem.id}`} className="btn btn-sm btn-ok">
+              {nextProblem && nextPath && (
+                <Link to={nextPath} className="btn btn-sm btn-ok">
                   Próximo: {nextProblem.title} →
                 </Link>
               )}

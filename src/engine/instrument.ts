@@ -24,6 +24,8 @@ interface Ctx {
   scopes: string[][]
   /** dentro de método de classe: captura `this` */
   thisOk?: boolean
+  /** nomes declarados em funções externas / no topo do código (closure) */
+  outer?: string[]
 }
 
 interface Ins {
@@ -112,6 +114,10 @@ export function instrument(code: string): InstrumentResult {
   const snapText = (line: number, ctx: Ctx) => {
     const names = [...new Set(ctx.scopes.flat())].filter((n) => !n.startsWith('__'))
     let body = names.map((n) => `try{__o[${JSON.stringify(n)}]=${n}}catch(__e){}`).join('')
+    // variáveis capturadas do escopo externo (closure), marcadas com ↑
+    const own = new Set(names)
+    const outer = [...new Set(ctx.outer ?? [])].filter((n) => !own.has(n) && !n.startsWith('__'))
+    body += outer.map((n) => `try{__o[${JSON.stringify('↑' + n)}]=${n}}catch(__e){}`).join('')
     if (ctx.thisOk) body += `try{__o["this"]=this}catch(__e){}`
     return `__s(${line},()=>{const __o={};${body}return __o});`
   }
@@ -145,9 +151,10 @@ export function instrument(code: string): InstrumentResult {
     const body = fn.body as Node
     const params: string[] = []
     for (const p of fn.params as Node[]) patternNames(p, params)
+    const outer = [...(ctx.outer ?? []), ...ctx.scopes.flat()]
     if (body.type !== 'BlockStatement') {
       // arrow com expressão: não instrumenta (ex.: callbacks de sort/map), só percorre
-      walk(body, { inFn: false, scopes: [] })
+      walk(body, { inFn: false, scopes: [], outer: [...outer, ...params] })
       return
     }
     const name = (fn.id as Node | null)?.name as string | undefined
@@ -156,7 +163,7 @@ export function instrument(code: string): InstrumentResult {
     if (name && fn.type === 'FunctionExpression') fnScope.push(name)
     const thisOk = isMethod || (fn.type === 'ArrowFunctionExpression' && !!ctx.thisOk)
     add(body.start + 1, `__enter(${JSON.stringify(fnName)},${JSON.stringify(params)},()=>[${params.join(',')}]);try{`)
-    handleList(body.body as Node[], { inFn: true, scopes: [fnScope], thisOk })
+    handleList(body.body as Node[], { inFn: true, scopes: [fnScope], thisOk, outer })
     add(body.end - 1, `}finally{__exit()}`)
   }
 
@@ -175,7 +182,7 @@ export function instrument(code: string): InstrumentResult {
   function walk(node: Node, ctx: Ctx): void {
     switch (node.type) {
       case 'Program':
-        handleList(node.body as Node[], { inFn: false, scopes: [] })
+        handleList(node.body as Node[], { inFn: false, scopes: [[...varNames(node.body), ...lexNames(node.body as Node[])]] })
         return
       case 'FunctionDeclaration':
       case 'FunctionExpression':
@@ -197,7 +204,7 @@ export function instrument(code: string): InstrumentResult {
         if (val && fnTypes.has(val.type)) {
           const hint = key.type === 'Identifier' ? (key.name as string) : undefined
           if (node.computed) walk(key, ctx)
-          handleFn(val, ctx, hint, node.type === 'MethodDefinition')
+          handleFn(val, ctx, hint, node.type === 'MethodDefinition' || val.type === 'FunctionExpression')
           return
         }
         break
