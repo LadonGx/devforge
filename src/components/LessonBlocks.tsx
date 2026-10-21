@@ -7,6 +7,8 @@ import { Visualizer } from './viz/Visualizer'
 import { Quiz } from './widgets/Quiz'
 import { CoercionLab } from './widgets/CoercionLab'
 import { Pipeline } from './widgets/Pipeline'
+import { EventLoop } from './widgets/EventLoop'
+import { Timeline } from './widgets/Timeline'
 
 function Demo({ block }: { block: Extract<Block, { type: 'demo' }> }) {
   const [trace, setTrace] = useState<TraceResult | null>(null)
@@ -80,6 +82,10 @@ export function LessonBlocks({ blocks }: { blocks: Block[] }) {
             return <CoercionLab key={i} title={b.title} />
           case 'pipeline':
             return <Pipeline key={i} title={b.title} caption={b.caption} input={b.input} stages={b.stages} />
+          case 'eventloop':
+            return <EventLoop key={i} title={b.title} caption={b.caption} code={b.code} program={b.program} />
+          case 'timeline':
+            return <Timeline key={i} title={b.title} caption={b.caption} tasks={b.tasks} />
         }
       })}
     </div>

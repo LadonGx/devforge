@@ -274,6 +274,19 @@ export function instrument(code: string): InstrumentResult {
         if (node.finalizer) walk(node.finalizer as Node, ctx)
         return
       }
+      case 'AwaitExpression': {
+        // await pausa a função: o frame sai da pilha e volta quando a promise resolve
+        const arg = node.argument as Node
+        if (ctx.inFn && arg) {
+          const line = node.loc.start.line
+          add(node.start, '__resume(')
+          add(arg.start, '__suspend(')
+          walk(arg, ctx)
+          add(arg.end, `,${line}),${line})`)
+          return
+        }
+        break
+      }
       case 'ReturnStatement': {
         const arg = node.argument as Node | null
         if (arg && ctx.inFn) {

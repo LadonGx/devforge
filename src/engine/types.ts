@@ -63,7 +63,7 @@ export interface FrameSnap {
 
 export interface Step {
   line: number
-  kind: 'line' | 'return' | 'call'
+  kind: 'line' | 'return' | 'call' | 'await' | 'resume'
   stack: FrameSnap[] // [0] = mais externo
   ret?: V
   logs: number // quantidade de logs emitidos até aqui

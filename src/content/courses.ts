@@ -1,6 +1,7 @@
 import type { Course, Problem } from './types'
 import { PATTERNS, PROBLEMS } from './leetcode'
 import { JS_UNITS, JS_PROBLEMS } from './js'
+import { ASYNC_UNITS, ASYNC_PROBLEMS } from './async'
 
 export const LEETCODE: Course = {
   id: 'leetcode',
@@ -41,10 +42,29 @@ export const JS_FUNDAMENTOS: Course = {
   ],
   units: JS_UNITS,
   problems: JS_PROBLEMS,
-  soonNote: '**Próximo módulo:** Assincronismo (event loop visual, Promises, async/await).',
+  soonNote: '**Próximo módulo:** [Assincronismo](#/async) (event loop visual, Promises, async/await).',
 }
 
-export const COURSES: Course[] = [JS_FUNDAMENTOS, LEETCODE]
+export const JS_ASYNC: Course = {
+  id: 'js-async',
+  title: 'Assincronismo',
+  basePath: '/async',
+  unitSegment: 'aula',
+  unitLabel: 'Aula',
+  volumeLabel: 'Volume 1 · JavaScript',
+  intro:
+    'Como o JavaScript faz várias coisas "ao mesmo tempo" com **uma thread só**. O coração do módulo é o **visualizador do event loop**: você vê a call stack, as Web APIs e as filas de microtasks e macrotasks se mexendo a cada linha. Depois: callbacks, Promises, async/await e os padrões de concorrência que aparecem em entrevistas e no dia a dia.',
+  how: [
+    { title: 'Veja o event loop', text: 'Cada aula tem cenários animados passo a passo.' },
+    { title: 'Teste a intuição', text: 'Perguntas de "qual a ordem da saída?", o clássico das entrevistas.' },
+    { title: 'Implemente', text: 'sleep, promisify, Promise.all, retry, pool e debounce, com testes reais.' },
+  ],
+  units: ASYNC_UNITS,
+  problems: ASYNC_PROBLEMS,
+  soonNote: '**Próximo módulo:** Tipagem com TypeScript.',
+}
+
+export const COURSES: Course[] = [JS_FUNDAMENTOS, JS_ASYNC, LEETCODE]
 
 export const courseById = (id: string) => COURSES.find((c) => c.id === id)
 

@@ -679,3 +679,6 @@
 .scalar-name.is-closure {
   color: var(--accent-2);
 }
+.viz-desc.is-async {
+  background: color-mix(in srgb, var(--accent-2) 18%, transparent);
+}

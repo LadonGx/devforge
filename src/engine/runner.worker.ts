@@ -182,6 +182,21 @@ async function runTrace(req: Extract<WorkerRequest, { kind: 'trace' }>): Promise
       if (f.lastRet !== undefined) f.call.ret = label(f.lastRet, 18)
     }
   }
+  /** await: registra o passo, tira o frame da pilha e devolve uma promise que carrega o frame */
+  const __suspend = (x: unknown, line: number) => {
+    push({ line, kind: 'await', stack: snapStack(), logs: logs.length })
+    const f = frames.pop()
+    return Promise.resolve(x).then(
+      (v) => ({ ok: true, v, f }),
+      (e) => ({ ok: false, e, f }),
+    )
+  }
+  const __resume = (box: { ok: boolean; v?: unknown; e?: unknown; f?: Frame }, line: number) => {
+    if (box.f) frames.push(box.f)
+    push({ line, kind: 'resume', stack: snapStack(), logs: logs.length })
+    if (!box.ok) throw box.e
+    return box.v
+  }
   const __ret = (line: number, v: unknown) => {
     const top = frames[frames.length - 1]
     if (top) top.lastRet = v
@@ -193,7 +208,7 @@ async function runTrace(req: Extract<WorkerRequest, { kind: 'trace' }>): Promise
   let error: RunError | undefined
   let returnValue: V | undefined
   try {
-    const fn = getFn(compile(req.code, req.fnName, { __s, __enter, __exit, __ret }), req.fnName)
+    const fn = getFn(compile(req.code, req.fnName, { __s, __enter, __exit, __ret, __suspend, __resume }), req.fnName)
     const r = await execute(fn, req.input, req.io)
     returnValue = serialize(r)
   } catch (e) {

@@ -1,4 +1,5 @@
 import type { CompareMode, IOSpec, TestCase } from '../engine/types'
+import type { ElStmt } from '../components/widgets/eventLoopSim'
 
 export type Difficulty = 'Fácil' | 'Médio' | 'Difícil'
 
@@ -13,6 +14,9 @@ export type Block =
   | { type: 'quiz'; question: string; code?: string; options: string[]; answer: number; explain: string }
   | { type: 'coercion'; title?: string }
   | { type: 'pipeline'; title: string; caption?: string; input: unknown[]; stages: PipelineStage[] }
+  /** `prelude` só é usado pelo `npm run validate` para rodar o código de verdade e conferir a saída */
+  | { type: 'eventloop'; title: string; caption?: string; code: string; program: ElStmt[]; prelude?: string }
+  | { type: 'timeline'; title: string; caption?: string; tasks: { label: string; ms: number }[] }
 
 export interface PipelineStage {
   op: 'map' | 'filter' | 'reduce' | 'find' | 'some' | 'every' | 'sort'

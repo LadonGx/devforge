@@ -9,9 +9,20 @@ import { instrument } from '../src/engine/instrument'
 import { GLOBALS, buildArgs, convertResult, runDesign } from '../src/engine/ds'
 import type { IOSpec } from '../src/engine/types'
 import { transform } from 'sucrase'
+import { simulate } from '../src/components/widgets/eventLoopSim'
 
 const noop = () => {}
-const hooks = { __s: (_l: number, c: () => unknown) => c(), __enter: noop, __exit: noop, __ret: (_l: number, v: unknown) => v }
+const hooks = {
+  __s: (_l: number, c: () => unknown) => c(),
+  __enter: noop,
+  __exit: noop,
+  __ret: (_l: number, v: unknown) => v,
+  __suspend: (x: unknown) => Promise.resolve(x).then((v) => ({ ok: true, v }), (e) => ({ ok: false, e })),
+  __resume: (b: { ok: boolean; v?: unknown; e?: unknown }) => {
+    if (!b.ok) throw b.e
+    return b.v
+  },
+}
 
 function compile(code: string, name: string, withHooks = false): (...a: unknown[]) => unknown {
   const extra = withHooks ? hooks : {}
@@ -39,6 +50,17 @@ const PATTERNS = COURSES.flatMap((c) => c.units)
 
 let fails = 0
 const ids = new Set<string>()
+
+/** Roda o código de um cenário do event loop de verdade e devolve o que foi impresso. */
+async function realConsole(code: string, prelude = ''): Promise<string[]> {
+  const out: string[] = []
+  const fakeConsole = { log: (...a: unknown[]) => out.push(a.map(String).join(' ')) }
+  new Function('console', prelude + '\n' + code)(fakeConsole)
+  await new Promise((r) => setTimeout(r, 400))
+  return out
+}
+
+async function main() {
 for (const p of PROBLEMS) {
   if (ids.has(p.id)) {
     console.log('ID DUPLICADO', p.id)
@@ -55,7 +77,7 @@ for (const p of PROBLEMS) {
         ['INST ', fnInst],
       ] as const) {
         try {
-          const got = exec(f, t.input, p.io)
+          const got = await exec(f, t.input, p.io)
           if (!compareResult(got, t.expected, p.compare ?? 'exact')) {
             fails++
             console.log(`${label}FAIL`, p.id, lang, t.label, JSON.stringify(got), '!=', JSON.stringify(t.expected))
@@ -79,7 +101,7 @@ for (const p of PROBLEMS) {
     const input = new Function('return (' + p.perf.gen.toString() + ')')()(p.perf.n)
     const fn = compile(p.solution.js, p.fnName)
     const t0 = performance.now()
-    exec(fn, input, p.io)
+    await exec(fn, input, p.io)
     const ms = performance.now() - t0
     console.log('perf', p.id, ms.toFixed(1) + 'ms', ms > p.perf.limitMs / 3 ? '  <-- ATENÇÃO: referência lenta' : '')
   }
@@ -92,10 +114,21 @@ for (const pat of PATTERNS) {
     }
   }
   for (const b of pat.lesson) {
+    if (b.type === 'eventloop') {
+      // o simulador precisa imprimir exatamente o que o JS real imprime
+      const frames = simulate(b.program)
+      const sim = frames[frames.length - 1].console
+      const real = await realConsole(b.code, b.prelude)
+      if (JSON.stringify(sim) !== JSON.stringify(real)) {
+        fails++
+        console.log('EVENTLOOP DIVERGE', pat.id, b.title, '\n  simulado:', JSON.stringify(sim), '\n  real:    ', JSON.stringify(real))
+      } else console.log('eventloop ok', pat.id, '·', b.title, '·', frames.length, 'quadros')
+      continue
+    }
     if (b.type !== 'demo') continue
     try {
       const f = compile(instrument(b.code).code, b.fnName, true)
-      const r = exec(f, b.input, b.io)
+      const r = await exec(f, b.input, b.io)
       console.log('demo', pat.id, JSON.stringify(r)?.slice(0, 60))
     } catch (e) {
       fails++
@@ -103,5 +136,8 @@ for (const pat of PATTERNS) {
     }
   }
 }
+}
+main().then(() => {
 console.log(`\n${fails === 0 ? 'OK' : 'FALHAS: ' + fails} · ${PROBLEMS.length} exercícios · ${PATTERNS.length} aulas · ${COURSES.length} cursos`)
 if (fails) process.exit(1)
+})

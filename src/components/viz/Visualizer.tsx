@@ -101,6 +101,8 @@ export function Visualizer({ trace, code, lang = 'js', onLine, title }: Props) {
     if (!step) return null
     const fn = step.stack[step.stack.length - 1]?.name
     if (step.kind === 'return') return `Linha ${step.line} · ${fn}() retorna ${step.ret ? formatV(step.ret) : ''}`
+    if (step.kind === 'await') return `Linha ${step.line} · await: ${fn}() pausa e sai da pilha até a promise resolver`
+    if (step.kind === 'resume') return `Linha ${step.line} · a promise resolveu: ${fn}() volta para a pilha (microtask)`
     return `Linha ${step.line} · prestes a executar (em ${fn}())`
   })()
 
@@ -149,7 +151,9 @@ export function Visualizer({ trace, code, lang = 'js', onLine, title }: Props) {
       {title && <div className="viz-title">{title}</div>}
 
       {step ? (
-        <div className={'viz-desc' + (step.kind === 'return' ? ' is-return' : '')}>{description}</div>
+        <div className={'viz-desc' + (step.kind === 'return' ? ' is-return' : step.kind === 'await' || step.kind === 'resume' ? ' is-async' : '')}>
+          {description}
+        </div>
       ) : (
         <div className="viz-desc is-end">Fim da execução</div>
       )}

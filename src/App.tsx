@@ -38,6 +38,7 @@ export default function App() {
           </NavLink>
           <NavLink to="/trilhas">Trilhas</NavLink>
           <NavLink to="/js">Fundamentos JS</NavLink>
+          <NavLink to="/async">Async</NavLink>
           <NavLink to="/leetcode">LeetCode</NavLink>
         </nav>
         <div className="topbar-right">

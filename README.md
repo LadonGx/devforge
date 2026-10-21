@@ -25,6 +25,7 @@ O progresso (problemas resolvidos, aulas concluídas e o código que você escre
 
 - **Vitrine** com os módulos separados por volume (JavaScript → TypeScript → Node/Web → Arquitetura → React + CSS) e **trilhas sugeridas**.
 - **Fundamentos de JavaScript** (`/js`): 7 aulas e 21 exercícios: tipos e coerção, escopo/hoisting/closures, `this` e bind, métodos de array, objetos/referências/imutabilidade, Map e Set, desestruturação/spread/`?.`/`??`. As aulas têm perguntas rápidas, um **laboratório de coerção** (mostra cada regra que o `==` e o `+` aplicam) e um **pipeline de arrays** animado (map → filter → reduce elemento por elemento).
+- **Assincronismo** (`/async`): 5 aulas e 12 exercícios: event loop, callbacks, Promises, async/await e concorrência (`Promise.all`, `allSettled`, timeout, limite de concorrência, debounce). As aulas têm um **simulador do event loop** (call stack, Web APIs, fila de microtasks, fila de macrotasks e console, passo a passo) e uma **linha do tempo** sequencial × paralelo. No visualizador, cada `await` aparece como "a função sai da pilha" e "volta para a pilha", e os testes medem o tempo para conferir se o código roda em paralelo.
 - **Módulo LeetCode / NeetCode** com 11 padrões e 37 problemas, cada padrão com aula + animação:
   - parte 1: Arrays & Hashing, Two Pointers, Sliding Window, Stack, Binary Search;
   - parte 2: Linked List, Trees, Heap / Priority Queue, Backtracking, Graphs, 1-D DP.
@@ -49,11 +50,12 @@ src/
     serialize.ts       snapshot de qualquer valor JS para o visualizador
     compare.ts         comparação de resultados (exata, sem ordem...)
   components/viz/    visualizador (arrays, matriz, Map, Set, pilha, listas, árvores, heap, chamadas)
-  components/widgets/ quiz, laboratório de coerção, pipeline de arrays
+  components/widgets/ quiz, laboratório de coerção, pipeline de arrays, event loop, linha do tempo
   content/
     modules.ts         catálogo de módulos, volumes e trilhas
     courses.ts         registro dos cursos (rotas, aulas, exercícios)
     js/                Fundamentos de JS (aulas e exercícios)
+    async/             Assincronismo (aulas e exercícios)
     leetcode/          padrões (aulas) e problemas
   pages/             telas (vitrine, trilhas, módulo, aula, problema)
 scripts/validate-content.ts
@@ -61,16 +63,18 @@ scripts/validate-content.ts
 
 ## Como adicionar conteúdo
 
-Os módulos com aulas e exercícios são **cursos** registrados em `src/content/courses.ts` (hoje: `js-fundamentos` em `src/content/js/` e `leetcode` em `src/content/leetcode/`).
+Os módulos com aulas e exercícios são **cursos** registrados em `src/content/courses.ts` (hoje: `js-fundamentos` em `src/content/js/`, `js-async` em `src/content/async/` e `leetcode` em `src/content/leetcode/`).
 
 1. Crie o objeto `Problem` (enunciado, testes, dicas, explicação, solução JS e TS, `perf` opcional) no arquivo de problemas do curso.
 2. Registre no `index.ts` do curso e adicione o `id` na lista `problems` da aula/padrão.
 3. Rode `npm run validate`.
 
-Para testar funções de alta ordem, closures ou imutabilidade, use `io.harness`: o código de uma função `(funcaoDoUsuario, ...entrada) => resultado` que monta o cenário do teste (veja `src/content/js/problems1.ts`).
+Para testar funções de alta ordem, closures ou imutabilidade, use `io.harness`: o código de uma função `(funcaoDoUsuario, ...entrada) => resultado` que monta o cenário do teste (veja `src/content/js/problems1.ts`). O harness pode ser `async` (veja `src/content/async/problems.ts`).
+
+Cenários do bloco `eventloop` são conferidos pelo `npm run validate`: a saída final do simulador precisa ser igual à do JavaScript real.
 
 > Os geradores de `perf.gen` são enviados como texto para o worker: precisam ser autocontidos (não podem usar variáveis de fora da função).
 
 ## Próximas features
 
-Assincronismo (event loop visual) → TypeScript com checagem de tipos → HTTP/REST, JWT, OAuth2 → SOLID, Clean Code, Clean Architecture → React + CSS.
+TypeScript com checagem de tipos → HTTP/REST, JWT, OAuth2 → SOLID, Clean Code, Clean Architecture → React + CSS.
