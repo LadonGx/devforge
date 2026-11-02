@@ -2,6 +2,23 @@
 
 Sistema de estudo com **explicação por partes**, **prática com testes** e **visualização passo a passo do seu próprio código** (estilo Python Tutor), focado na stack JavaScript / TypeScript / Node / React.
 
+<p align="center">
+  <img src="docs/demo.gif" alt="Demonstração do DevForge: vitrine, guia, exercício com testes, visualizador passo a passo e simulador do event loop" width="900">
+</p>
+
+## Telas
+
+| | |
+| --- | --- |
+| ![Vitrine com progresso, próximo passo sugerido e trilhas](docs/screenshots/01-vitrine.png) | ![Guia rumo à primeira vaga júnior, com etapas e provas](docs/screenshots/02-guia.png) |
+| **Vitrine**: progresso, próximo passo sugerido e trilhas | **Guia**: 10 etapas intercalando aulas e LeetCode, com prova no fim de cada uma |
+| ![Exercício com editor TypeScript e todos os testes passando](docs/screenshots/03-exercicio-testes.png) | ![Visualizador passo a passo com ponteiros l e r desenhados sob o array](docs/screenshots/04-visualizador.png) |
+| **Exercício**: editor JS/TS, testes isolados num Web Worker e teste de desempenho | **Visualizador**: o seu código rodando linha a linha, com ponteiros sob o array |
+| ![Árvore de chamadas da recursão em Invert Binary Tree](docs/screenshots/05-recursao.png) | ![Simulador do event loop com call stack, filas e console](docs/screenshots/06-event-loop.png) |
+| **Recursão**: árvore de chamadas (executando, esperando retorno, já retornou) | **Event loop**: call stack, Web APIs, microtasks, macrotasks e console |
+| ![Tela inicial da Prova 1 com tipos de questão e nota mínima](docs/screenshots/07-prova.png) | |
+| **Provas**: múltipla escolha, prever a saída, código com testes e discursiva | |
+
 ## Como rodar
 
 Requisitos: Node.js 20+.
