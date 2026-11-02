@@ -8,11 +8,21 @@ export interface ProgressState {
   lessons: Record<string, string> // id da aula -> data ISO
   code: Record<string, string> // `${problemId}:${lang}` -> código
   lang: Lang
+  /** resultado das provas: melhor nota, última nota, tentativas */
+  exams: Record<string, ExamRecord>
+}
+
+export interface ExamRecord {
+  best: number
+  last: number
+  passed: boolean
+  attempts: number
+  at: string
 }
 
 const KEY = 'devforge:progress:v1'
 
-const empty: ProgressState = { solved: {}, attempted: {}, lessons: {}, code: {}, lang: 'ts' }
+const empty: ProgressState = { solved: {}, attempted: {}, lessons: {}, code: {}, lang: 'ts', exams: {} }
 
 function load(): ProgressState {
   try {
@@ -71,6 +81,14 @@ export const progress = {
       const code = { ...s.code }
       delete code[`${id}:${lang}`]
       return { ...s, code }
+    })
+  },
+  saveExam(id: string, pct: number, passPct: number) {
+    update((s) => {
+      const prev = s.exams[id]
+      const best = Math.max(prev?.best ?? 0, pct)
+      const rec: ExamRecord = { best, last: pct, passed: best >= passPct, attempts: (prev?.attempts ?? 0) + 1, at: new Date().toISOString() }
+      return { ...s, exams: { ...s.exams, [id]: rec } }
     })
   },
   setLang(lang: Lang) {

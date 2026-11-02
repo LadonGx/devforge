@@ -102,6 +102,12 @@ export interface TestResult {
   ms: number
 }
 
+export interface TestRun {
+  results: TestResult[]
+  fatal?: RunError
+  timeout?: boolean
+}
+
 export interface PerfResult {
   userMs?: number
   refMs?: number

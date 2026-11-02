@@ -10,6 +10,10 @@ import { GLOBALS, buildArgs, convertResult, runDesign } from '../src/engine/ds'
 import type { IOSpec } from '../src/engine/types'
 import { transform } from 'sucrase'
 import { simulate } from '../src/components/widgets/eventLoopSim'
+import { EXAMS, EXAM_COURSE, topicRef } from '../src/content/exams'
+import { STAGES } from '../src/content/guide'
+import { courseById } from '../src/content/courses'
+import { normalizeLine } from '../src/lib/exam'
 
 const noop = () => {}
 const hooks = {
@@ -45,7 +49,7 @@ function exec(fn: (...a: unknown[]) => unknown, input: unknown[], io?: IOSpec) {
 
 const ts = (code: string) => transform(code, { transforms: ['typescript'], disableESTransforms: true }).code
 
-const PROBLEMS = COURSES.flatMap((c) => c.problems)
+const PROBLEMS = [...COURSES.flatMap((c) => c.problems), ...EXAM_COURSE.problems]
 const PATTERNS = COURSES.flatMap((c) => c.units)
 
 let fails = 0
@@ -54,7 +58,13 @@ const ids = new Set<string>()
 /** Roda o código de um cenário do event loop de verdade e devolve o que foi impresso. */
 async function realConsole(code: string, prelude = ''): Promise<string[]> {
   const out: string[] = []
-  const fakeConsole = { log: (...a: unknown[]) => out.push(a.map(String).join(' ')) }
+  const fakeConsole = {
+    log: (...a: unknown[]) => {
+      // as questões de "prever a saída" só podem imprimir primitivos (o formato de objetos varia)
+      if (a.some((x) => typeof x === 'object' && x !== null)) out.push('<<OBJETO IMPRESSO>>')
+      out.push(a.map(String).join(' '))
+    },
+  }
   new Function('console', prelude + '\n' + code)(fakeConsole)
   await new Promise((r) => setTimeout(r, 400))
   return out
@@ -136,8 +146,66 @@ for (const pat of PATTERNS) {
     }
   }
 }
+
+// ---------- Provas ----------
+const qids = new Set<string>()
+for (const e of EXAMS) {
+  if (!STAGES.find((st) => st.id === e.stage)) {
+    fails++
+    console.log('PROVA com etapa inexistente', e.id, e.stage)
+  }
+  for (const q of e.questions) {
+    if (qids.has(q.id)) {
+      fails++
+      console.log('QUESTÃO com id duplicado', q.id)
+    }
+    qids.add(q.id)
+    if (!topicRef(q.topic)) {
+      fails++
+      console.log('QUESTÃO com tópico inválido', q.id, q.topic)
+    }
+    if (q.kind === 'choice' && (q.answer < 0 || q.answer >= q.options.length)) {
+      fails++
+      console.log('QUESTÃO com resposta fora das alternativas', q.id)
+    }
+    if (q.kind === 'output') {
+      let real: string[]
+      try {
+        real = await realConsole(q.code)
+      } catch (err) {
+        real = ['ERRO: ' + (err as Error).message]
+      }
+      const exp = q.expected.map(normalizeLine)
+      if (JSON.stringify(real.map(normalizeLine)) !== JSON.stringify(exp)) {
+        fails++
+        console.log('SAÍDA DIVERGE', q.id, '\n  esperado:', JSON.stringify(q.expected), '\n  real:    ', JSON.stringify(real))
+      }
+    }
+    if (q.kind === 'essay' && q.checklist.length < 2) {
+      fails++
+      console.log('DISCURSIVA sem checklist', q.id)
+    }
+  }
+  console.log('prova ok', e.id, e.questions.length, 'questões')
+}
+// ---------- Guia ----------
+for (const st of STAGES) {
+  for (const step of st.steps) {
+    if (step.kind === 'unit') {
+      const c = courseById(step.course)
+      if (!c?.units.find((u) => u.id === step.unit)) {
+        fails++
+        console.log('GUIA aponta para aula inexistente', st.id, step.course, step.unit)
+      }
+    }
+    if (step.kind === 'exam' && !EXAMS.find((e) => e.id === step.exam)) {
+      fails++
+      console.log('GUIA aponta para prova inexistente', st.id, step.exam)
+    }
+  }
+}
 }
 main().then(() => {
-console.log(`\n${fails === 0 ? 'OK' : 'FALHAS: ' + fails} · ${PROBLEMS.length} exercícios · ${PATTERNS.length} aulas · ${COURSES.length} cursos`)
+console.log(`\n${fails === 0 ? 'OK' : 'FALHAS: ' + fails} · ${PROBLEMS.length} exercícios · ${PATTERNS.length} aulas · ${COURSES.length} cursos · ${EXAMS.length} provas`)
 if (fails) process.exit(1)
 })

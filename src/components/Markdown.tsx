@@ -64,6 +64,16 @@ export function inline(text: string): ReactNode[] {
   let i = 0
   while (i < text.length) {
     const ch = text[i]
+    if (text.startsWith('``', i)) {
+      // ``código com ` dentro``
+      const close = text.indexOf('``', i + 2)
+      if (close > i + 2) {
+        flush()
+        out.push(<code key={k++}>{text.slice(i + 2, close).trim()}</code>)
+        i = close + 2
+        continue
+      }
+    }
     if (ch === '`') {
       const close = text.indexOf('`', i + 1)
       if (close > i + 1) {
