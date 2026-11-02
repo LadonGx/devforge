@@ -1,7 +1,7 @@
 import { transform } from 'sucrase'
 import { parse } from 'acorn'
 import { instrument } from './instrument'
-import type { CompareMode, IOSpec, Lang, PerfResult, RunError, TestCase, TestResult, TraceResult, WorkerRequest, WorkerResponse } from './types'
+import type { CompareMode, IOSpec, Lang, PerfResult, RunError, TestCase, TestRun, TraceResult, WorkerRequest, WorkerResponse } from './types'
 
 export interface Prepared {
   js?: string
@@ -53,11 +53,7 @@ function runInWorker(req: WorkerRequest, timeoutMs: number): Promise<WorkerRespo
   })
 }
 
-export interface TestRun {
-  results: TestResult[]
-  fatal?: RunError
-  timeout?: boolean
-}
+export type { TestRun } from './types'
 
 export async function runTests(code: string, lang: Lang, fnName: string, tests: TestCase[], compare: CompareMode, io?: IOSpec): Promise<TestRun> {
   const p = prepare(code, lang)

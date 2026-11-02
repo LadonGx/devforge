@@ -2,6 +2,23 @@
 
 Sistema de estudo com **explicação por partes**, **prática com testes** e **visualização passo a passo do seu próprio código** (estilo Python Tutor), focado na stack JavaScript / TypeScript / Node / React.
 
+<p align="center">
+  <img src="docs/demo.gif" alt="Demonstração do DevForge: vitrine, guia, exercício com testes, visualizador passo a passo e simulador do event loop" width="900">
+</p>
+
+## Telas
+
+| | |
+| --- | --- |
+| ![Vitrine com progresso, próximo passo sugerido e trilhas](docs/screenshots/01-vitrine.png) | ![Guia rumo à primeira vaga júnior, com etapas e provas](docs/screenshots/02-guia.png) |
+| **Vitrine**: progresso, próximo passo sugerido e trilhas | **Guia**: 10 etapas intercalando aulas e LeetCode, com prova no fim de cada uma |
+| ![Exercício com editor TypeScript e todos os testes passando](docs/screenshots/03-exercicio-testes.png) | ![Visualizador passo a passo com ponteiros l e r desenhados sob o array](docs/screenshots/04-visualizador.png) |
+| **Exercício**: editor JS/TS, testes isolados num Web Worker e teste de desempenho | **Visualizador**: o seu código rodando linha a linha, com ponteiros sob o array |
+| ![Árvore de chamadas da recursão em Invert Binary Tree](docs/screenshots/05-recursao.png) | ![Simulador do event loop com call stack, filas e console](docs/screenshots/06-event-loop.png) |
+| **Recursão**: árvore de chamadas (executando, esperando retorno, já retornou) | **Event loop**: call stack, Web APIs, microtasks, macrotasks e console |
+| ![Tela inicial da Prova 1 com tipos de questão e nota mínima](docs/screenshots/07-prova.png) | |
+| **Provas**: múltipla escolha, prever a saída, código com testes e discursiva | |
+
 ## Como rodar
 
 Requisitos: Node.js 20+.
@@ -24,7 +41,14 @@ O progresso (problemas resolvidos, aulas concluídas e o código que você escre
 ## O que já existe
 
 - **Vitrine** com os módulos separados por volume (JavaScript → TypeScript → Node/Web → Arquitetura → React + CSS) e **trilhas sugeridas**.
-- **Fundamentos de JavaScript** (`/js`): 7 aulas e 21 exercícios: tipos e coerção, escopo/hoisting/closures, `this` e bind, métodos de array, objetos/referências/imutabilidade, Map e Set, desestruturação/spread/`?.`/`??`. As aulas têm perguntas rápidas, um **laboratório de coerção** (mostra cada regra que o `==` e o `+` aplicam) e um **pipeline de arrays** animado (map → filter → reduce elemento por elemento).
+- **Guia: rumo à primeira vaga júnior** (`/guia`): 10 etapas que intercalam as aulas de JavaScript e Async com os padrões do LeetCode (cada padrão entra logo depois da aula que ele usa), com uma **prova** no fim de cada etapa e um checklist final de candidatura. As etapas dos módulos que ainda não existem aparecem como "em breve".
+- **Provas** (`/provas`): 5 provas (etapas 1 a 5) com 4 tipos de questão:
+  - múltipla escolha (conceitos e boas práticas), com explicação de cada resposta;
+  - **prever a saída** do console (a resposta é conferida com a execução real pelo `npm run validate`);
+  - **código com testes** (nota proporcional aos testes que passam, inclusive testes escondidos; depois dá para abrir no editor com visualizador);
+  - **discursiva de entrevista**, com resposta modelo e checklist para autoavaliação.
+  Nota mínima de 70% (não bloqueia o guia, a prova fica marcada como pendente), tempo sugerido, rascunho salvo no navegador e uma seção "O que revisar" com as aulas dos assuntos em que você errou.
+- **Fundamentos de JavaScript** (`/js`): 17 aulas e 53 exercícios, do zero ao avançado, em 4 partes: primeiros passos (variáveis, decisões, loops, funções, strings), dados (arrays, map/filter/reduce, objetos, Map e Set), como o JS pensa (coerção, escopo e closures, `this`, referências, sintaxe moderna) e indo além (classes, erros, recursão). Cada aula começa com uma **analogia do dia a dia**, tem exemplos animados, perguntas rápidas, dicas de **como o assunto cai na entrevista**, um **laboratório de coerção** e um **pipeline de arrays** animado.
 - **Assincronismo** (`/async`): 5 aulas e 12 exercícios: event loop, callbacks, Promises, async/await e concorrência (`Promise.all`, `allSettled`, timeout, limite de concorrência, debounce). As aulas têm um **simulador do event loop** (call stack, Web APIs, fila de microtasks, fila de macrotasks e console, passo a passo) e uma **linha do tempo** sequencial × paralelo. No visualizador, cada `await` aparece como "a função sai da pilha" e "volta para a pilha", e os testes medem o tempo para conferir se o código roda em paralelo.
 - **Módulo LeetCode / NeetCode** com 11 padrões e 37 problemas, cada padrão com aula + animação:
   - parte 1: Arrays & Hashing, Two Pointers, Sliding Window, Stack, Binary Search;
@@ -51,13 +75,17 @@ src/
     compare.ts         comparação de resultados (exata, sem ordem...)
   components/viz/    visualizador (arrays, matriz, Map, Set, pilha, listas, árvores, heap, chamadas)
   components/widgets/ quiz, laboratório de coerção, pipeline de arrays, event loop, linha do tempo
+  lib/exam.ts        correção das provas e rascunho salvo
+  lib/guide.ts       status e próximo passo do guia
   content/
     modules.ts         catálogo de módulos, volumes e trilhas
     courses.ts         registro dos cursos (rotas, aulas, exercícios)
     js/                Fundamentos de JS (aulas e exercícios)
     async/             Assincronismo (aulas e exercícios)
+    guide.ts           etapas do guia
+    exams/             provas (uma por etapa)
     leetcode/          padrões (aulas) e problemas
-  pages/             telas (vitrine, trilhas, módulo, aula, problema)
+  pages/             telas (vitrine, guia, provas, trilhas, módulo, aula, problema)
 scripts/validate-content.ts
 ```
 
@@ -74,6 +102,10 @@ Para testar funções de alta ordem, closures ou imutabilidade, use `io.harness`
 Cenários do bloco `eventloop` são conferidos pelo `npm run validate`: a saída final do simulador precisa ser igual à do JavaScript real.
 
 > Os geradores de `perf.gen` são enviados como texto para o worker: precisam ser autocontidos (não podem usar variáveis de fora da função).
+
+### Provas
+
+Cada prova fica em `src/content/exams/provaN.ts` e é registrada em `src/content/exams/index.ts`. O campo `topic` de cada questão (`"idDoCurso:idDaAula"`) liga a questão à aula da seção "O que revisar". Nas questões de "prever a saída", imprima só valores primitivos: o `npm run validate` roda o código de verdade e confere com `expected`.
 
 ## Próximas features
 

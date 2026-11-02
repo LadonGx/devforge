@@ -4,12 +4,18 @@ import { COURSES } from '../content/courses'
 import { useProgress } from '../lib/progress'
 import { moduleProgress, nextAction, stepStatus } from '../lib/stats'
 import type { ModuleInfo } from '../content/types'
+import { STAGES } from '../content/guide'
+import { guideProgress, nextGuideStep, stageProgress } from '../lib/guide'
 
 export function Home() {
   const s = useProgress()
   const solved = Object.keys(s.solved).length
   const lessons = Object.keys(s.lessons).length
-  const next = nextAction(s)
+  const guideNext = nextGuideStep(s)
+  const next = guideNext
+    ? { to: guideNext.info.to!, label: guideNext.info.title, detail: guideNext.info.detail ?? '', course: 'Guia · ' + guideNext.stage.title.split(' · ')[0] }
+    : nextAction(s)
+  const gp = guideProgress(s)
   const available = MODULES.filter((m) => m.status === 'available').length
 
   return (
@@ -19,7 +25,7 @@ export function Home() {
           <h1>Sua vitrine de estudos</h1>
           <p className="text-2">
             Conceitos explicados por partes, prática com testes e <strong>o seu código rodando passo a passo na tela</strong>. Escolha qualquer
-            módulo ou siga uma trilha sugerida.
+            módulo ou siga o <strong>guia para a primeira vaga júnior</strong>.
           </p>
           <div className="hero-stats">
             <div className="stat">
@@ -43,6 +49,30 @@ export function Home() {
           <span className="continue-title">{next.label}</span>
           <span className="continue-detail">{next.detail}</span>
           <span className="continue-go">Continuar →</span>
+        </Link>
+      </section>
+
+      <section className="section">
+        <Link to="/guia" className="guide-banner card">
+          <div className="guide-banner-text">
+            <span className="badge badge-accent">Guia</span>
+            <h2>Rumo à primeira vaga júnior</h2>
+            <p className="text-2 small">
+              Aulas de JavaScript intercaladas com LeetCode, em 10 etapas, com uma prova no fim de cada uma. {gp.done}/{gp.total} passos concluídos.
+            </p>
+          </div>
+          <div className="guide-banner-stages">
+            {STAGES.map((st, i) => {
+              const p = stageProgress(st, s)
+              const cls = p.total === 0 ? 'soon' : p.complete ? 'done' : p.done > 0 ? 'progress' : 'todo'
+              return (
+                <span key={st.id} className={'guide-banner-step gb-' + cls} title={st.title}>
+                  {i + 1}
+                </span>
+              )
+            })}
+          </div>
+          <span className="continue-go">Abrir o guia →</span>
         </Link>
       </section>
 

@@ -1,6 +1,6 @@
 import type { Course, Problem } from './types'
 import { PATTERNS, PROBLEMS } from './leetcode'
-import { JS_UNITS, JS_PROBLEMS } from './js'
+import { JS_UNITS, JS_PROBLEMS, JS_PARTS } from './js'
 import { ASYNC_UNITS, ASYNC_PROBLEMS } from './async'
 
 export const LEETCODE: Course = {
@@ -34,14 +34,15 @@ export const JS_FUNDAMENTOS: Course = {
   unitLabel: 'Aula',
   volumeLabel: 'Volume 1 · JavaScript',
   intro:
-    'Os conceitos que aparecem em **todo** código JS e em toda entrevista: tipos e coerção, escopo e closures, `this`, métodos de array, referências, Map/Set e a sintaxe moderna. Cada aula tem explicação por partes, perguntas rápidas para testar a intuição e exercícios com testes que você pode ver rodando passo a passo.',
+    'Do **zero** até os conceitos que caem em toda entrevista: variáveis, decisões, loops, funções, strings, arrays e objetos; depois coerção, escopo e closures, `this`, referências e sintaxe moderna; e por fim classes, erros e recursão. Cada aula começa com uma **analogia do dia a dia**, mostra o código rodando passo a passo, tem perguntas rápidas, dicas de **como o assunto cai na entrevista** e exercícios com testes.',
   how: [
-    { title: 'Leia a aula', text: 'Explicação por partes, laboratórios interativos e perguntas rápidas.' },
-    { title: 'Faça os exercícios', text: 'Funções pequenas com testes. Ctrl+Enter roda.' },
-    { title: 'Veja por dentro', text: 'Visualizador mostra closures (↑), referências e cada passo.' },
+    { title: 'Entenda com o dia a dia', text: 'Cada conceito começa com uma analogia antes do código.' },
+    { title: 'Veja rodando', text: 'Exemplos animados e perguntas rápidas para testar a intuição.' },
+    { title: 'Pratique', text: 'Exercícios com testes. Ctrl+Enter roda, e o visualizador mostra cada passo.' },
   ],
   units: JS_UNITS,
   problems: JS_PROBLEMS,
+  parts: JS_PARTS,
   soonNote: '**Próximo módulo:** [Assincronismo](#/async) (event loop visual, Promises, async/await).',
 }
 

@@ -7,7 +7,9 @@ export type Difficulty = 'Fácil' | 'Médio' | 'Difícil'
 export type Block =
   | { type: 'text'; md: string }
   | { type: 'code'; code: string; caption?: string }
-  | { type: 'callout'; tone: 'tip' | 'warn' | 'info'; title?: string; md: string }
+  | { type: 'callout'; tone: 'tip' | 'warn' | 'info' | 'interview'; title?: string; md: string }
+  /** analogia com algo do dia a dia, para fixar o conceito antes do código */
+  | { type: 'analogy'; title: string; md: string }
   | { type: 'signals'; title?: string; items: string[] }
   | { type: 'demo'; title: string; code: string; fnName: string; input: unknown[]; caption?: string; io?: IOSpec }
   | { type: 'compare'; left: { title: string; md: string }; right: { title: string; md: string } }
@@ -110,4 +112,33 @@ export interface Course {
   /** id da unidade → título da parte que começa nela */
   parts?: Record<string, string>
   soonNote?: string
+}
+
+/* ======================= Provas ======================= */
+
+/**
+ * `topic` aponta para a aula que o assunto revisa: "idDoCurso:idDaAula"
+ * (ex.: "js-fundamentos:loops", "leetcode:two-pointers").
+ */
+export type ExamQuestion =
+  /** múltipla escolha (conceitos e boas práticas) */
+  | { kind: 'choice'; id: string; topic: string; prompt: string; code?: string; options: string[]; answer: number; explain: string }
+  /** prever a saída: o aluno digita uma linha por console.log. `expected` é conferido pelo npm run validate. */
+  | { kind: 'output'; id: string; topic: string; prompt?: string; code: string; expected: string[]; explain: string }
+  /** código com testes automáticos; a nota é proporcional aos testes que passam */
+  | { kind: 'code'; id: string; topic: string; problem: Problem; weight?: number }
+  /** discursiva de entrevista: o aluno escreve e depois se autoavalia com a resposta modelo e o checklist */
+  | { kind: 'essay'; id: string; topic: string; prompt: string; model: string; checklist: string[] }
+
+export interface Exam {
+  id: string
+  title: string
+  /** etapa do guia a que a prova pertence */
+  stage: string
+  summary: string
+  /** tempo sugerido (não é obrigatório) */
+  minutes: number
+  /** nota mínima para aprovação (0 a 100) */
+  passPct: number
+  questions: ExamQuestion[]
 }

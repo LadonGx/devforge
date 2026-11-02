@@ -1,6 +1,7 @@
 import type { Pattern } from '../types'
 
-export const JS_UNITS: Pattern[] = [
+/** As 7 aulas originais (Partes 2 e 3 do curso). A ordem final fica em index.ts. */
+export const CORE_UNITS: Pattern[] = [
   /* ============================================================ */
   {
     id: 'tipos-coercao',

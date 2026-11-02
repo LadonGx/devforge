@@ -44,7 +44,17 @@ export function LessonBlocks({ blocks }: { blocks: Block[] }) {
           case 'callout':
             return (
               <div key={i} className={'callout callout-' + b.tone}>
-                {b.title && <div className="callout-title">{b.title}</div>}
+                {(b.title || b.tone === 'interview') && (
+                  <div className="callout-title">{b.tone === 'interview' ? 'Na entrevista' + (b.title ? ': ' + b.title : '') : b.title}</div>
+                )}
+                <Markdown md={b.md} />
+              </div>
+            )
+          case 'analogy':
+            return (
+              <div key={i} className="analogy">
+                <div className="analogy-tag">No dia a dia</div>
+                <div className="analogy-title">{b.title}</div>
                 <Markdown md={b.md} />
               </div>
             )

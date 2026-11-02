@@ -9,6 +9,9 @@ import { ProblemPage } from './pages/ProblemPage'
 import { ModuleSoon } from './pages/ModuleSoon'
 import { toggleTheme, useTheme } from './lib/theme'
 import { ErrorBoundary } from './components/ErrorBoundary'
+import { GuidePage } from './pages/GuidePage'
+import { ExamPage, ExamsPage } from './pages/ExamPage'
+import { EXAM_COURSE } from './content/exams'
 
 function ScrollTop() {
   const { pathname } = useLocation()
@@ -36,6 +39,7 @@ export default function App() {
           <NavLink to="/" end>
             Vitrine
           </NavLink>
+          <NavLink to="/guia">Guia</NavLink>
           <NavLink to="/trilhas">Trilhas</NavLink>
           <NavLink to="/js">Fundamentos JS</NavLink>
           <NavLink to="/async">Async</NavLink>
@@ -52,6 +56,10 @@ export default function App() {
         <Routes>
           <Route path="/" element={<Home />} />
           <Route path="/trilhas" element={<TrailsPage />} />
+          <Route path="/guia" element={<GuidePage />} />
+          <Route path="/provas" element={<ExamsPage />} />
+          <Route path="/prova/:id" element={<ExamPage />} />
+          <Route path="/provas/p/:id" element={<ProblemPage course={EXAM_COURSE} />} />
           {COURSES.flatMap((c) => [
             <Route key={c.id} path={c.basePath} element={<CourseHome course={c} />} />,
             <Route key={c.id + '-u'} path={`${c.basePath}/${c.unitSegment}/:id`} element={<UnitPage course={c} />} />,
