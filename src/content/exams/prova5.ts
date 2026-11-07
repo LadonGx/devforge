@@ -194,7 +194,8 @@ queueMicrotask(() => console.log("q1"));`,
   const start = Date.now();
   const result = await fetchNames(api, ids);
   const ms = Date.now() - start;
-  return { result, parallel: ids.length < 2 || ms < 40 * ids.length * 0.6 };
+  // sequencial leva pelo menos 40ms × n; paralelo, ~40ms. A folga absorve a lentidão do modo passo a passo.
+  return { result, parallel: ids.length < 2 || ms < 40 * (ids.length - 0.5) };
 }`,
         },
         description: `
@@ -230,7 +231,7 @@ async function fetchNames(api: Api, ids: number[]): Promise<string[]> {
           { input: [[1, -2, 3]], expected: { result: ['user1', 'user3'], parallel: true }, label: 'Um falha' },
           { input: [[]], expected: { result: [], parallel: true }, label: 'Nenhum id' },
           { input: [[5, 4, 3, 2, 1]], expected: { result: ['user5', 'user4', 'user3', 'user2', 'user1'], parallel: true }, label: 'Ordem dos ids' },
-          { input: [[-1, -2]], expected: { result: [], parallel: true }, label: 'Todos falham' },
+          { input: [[-1, -2, -3]], expected: { result: [], parallel: true }, label: 'Todos falham' },
         ],
         hints: [
           'Dispare todas as buscas antes de esperar: `ids.map((id) => api.getUser(id))`.',
