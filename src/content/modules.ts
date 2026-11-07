@@ -1,6 +1,7 @@
 import type { ModuleInfo, Trail } from './types'
 
 export const VOLUMES = [
+  { id: 'prep', title: 'Processos seletivos', desc: 'Treinos para uma etapa específica de um processo seletivo, no formato da prova real.' },
   { id: 'js', title: 'Volume 1 · JavaScript', desc: 'A base de tudo: a linguagem, assincronismo e treino de algoritmos para entrevistas.' },
   { id: 'ts', title: 'Volume 2 · TypeScript', desc: 'Tipagem de verdade, do básico aos tipos utilitários e genéricos.' },
   { id: 'node', title: 'Volume 3 · Node.js & Web', desc: 'Como a web funciona por baixo: HTTP, APIs REST e autenticação.' },
@@ -9,6 +10,18 @@ export const VOLUMES = [
 ] as const
 
 export const MODULES: ModuleInfo[] = [
+  {
+    id: 'ifood',
+    title: 'Treinamento iFood GenAI · Desafio Técnico',
+    volume: 'prep',
+    summary:
+      'Preparação para a etapa 3 do Programa GenAI 2027 (AI Engineer): o teste do HackerRank com problemas, SQL, API REST, conceitos e RAG, mais um simulado cronometrado.',
+    topics: ['Resolução de problemas', 'RAG na prática', 'API REST paginada', 'Conceitos', 'SQL (PostgreSQL)', 'Simulado'],
+    status: 'available',
+    route: '/ifood',
+    icon: 'AI',
+    level: 'Intermediário',
+  },
   {
     id: 'js-fundamentos',
     title: 'Fundamentos de JavaScript',
@@ -145,6 +158,20 @@ export const MODULES: ModuleInfo[] = [
 ]
 
 export const TRAILS: Trail[] = [
+  {
+    id: 'ifood',
+    title: 'Desafio técnico iFood GenAI',
+    summary: 'Do aquecimento ao simulado: conceitos, código, SQL e API (com a base de async antes), RAG e, por fim, a prova cronometrada.',
+    steps: [
+      { module: 'ifood', ref: 'conceitos', label: 'Conceitos (alternativas)' },
+      { module: 'ifood', ref: 'problemas', label: 'Resolução de problemas' },
+      { module: 'ifood', ref: 'sql', label: 'SQL' },
+      { module: 'js-async', ref: 'async-await', label: 'Base: async / await' },
+      { module: 'ifood', ref: 'api', label: 'Consumo de API REST' },
+      { module: 'ifood', ref: 'rag', label: 'RAG na prática' },
+      { module: 'ifood', ref: 'simulado', label: 'Simulado' },
+    ],
+  },
   {
     id: 'entrevista',
     title: 'Entrevista técnica: algoritmos',

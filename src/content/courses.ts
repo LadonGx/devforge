@@ -2,6 +2,7 @@ import type { Course, Problem } from './types'
 import { PATTERNS, PROBLEMS } from './leetcode'
 import { JS_UNITS, JS_PROBLEMS, JS_PARTS } from './js'
 import { ASYNC_UNITS, ASYNC_PROBLEMS } from './async'
+import { IFOOD } from './ifood'
 
 export const LEETCODE: Course = {
   id: 'leetcode',
@@ -65,7 +66,8 @@ export const JS_ASYNC: Course = {
   soonNote: '**Próximo módulo:** Tipagem com TypeScript.',
 }
 
-export const COURSES: Course[] = [JS_FUNDAMENTOS, JS_ASYNC, LEETCODE]
+/** O IFOOD tem página inicial própria (IfoodHome); as aulas e os exercícios dele usam as páginas comuns. */
+export const COURSES: Course[] = [JS_FUNDAMENTOS, JS_ASYNC, LEETCODE, IFOOD]
 
 export const courseById = (id: string) => COURSES.find((c) => c.id === id)
 

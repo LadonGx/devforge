@@ -2,6 +2,8 @@ import { MODULES } from '../content/modules'
 import { COURSES, courseById, courseOfProblem, lessonKey, problemPath, unitPath } from '../content/courses'
 import type { Course, Pattern, TrailStep } from '../content/types'
 import type { ProgressState } from './progress'
+import { IFOOD, ifoodSection, ifoodSectionPath } from '../content/ifood'
+import { ifoodProgress, sectionProgress } from './ifood'
 
 export function unitProgress(c: Course, p: Pattern, s: ProgressState) {
   const solved = p.problems.filter((id) => s.solved[id]).length
@@ -12,6 +14,7 @@ export function unitProgress(c: Course, p: Pattern, s: ProgressState) {
 }
 
 export function moduleProgress(moduleId: string, s: ProgressState) {
+  if (moduleId === IFOOD.id) return ifoodProgress(s)
   const c = courseById(moduleId)
   if (!c || c.units.length === 0) return { pct: 0, done: 0, items: 0 }
   const items = c.problems.length + c.units.length
@@ -24,6 +27,11 @@ export type StepStatus = 'done' | 'progress' | 'todo' | 'soon'
 export function stepStatus(step: TrailStep, s: ProgressState): StepStatus {
   const mod = MODULES.find((m) => m.id === step.module)
   if (!mod || mod.status === 'soon') return 'soon'
+  const sec = step.module === IFOOD.id && step.ref ? ifoodSection(step.ref) : undefined
+  if (sec) {
+    const p = sectionProgress(sec.id, s)
+    return p.empty ? 'soon' : p.done === p.total ? 'done' : p.done > 0 ? 'progress' : 'todo'
+  }
   const c = courseById(step.module)
   if (c && step.ref) {
     const u = c.units.find((x) => x.id === step.ref)
@@ -36,6 +44,8 @@ export function stepStatus(step: TrailStep, s: ProgressState): StepStatus {
 }
 
 export function stepRoute(step: TrailStep): string {
+  const sec = step.module === IFOOD.id && step.ref ? ifoodSection(step.ref) : undefined
+  if (sec) return ifoodSectionPath(sec.id)
   const c = courseById(step.module)
   if (c) return step.ref ? unitPath(c, step.ref) : c.basePath
   const mod = MODULES.find((m) => m.id === step.module)

@@ -1,6 +1,7 @@
 import { test, expect, gotoRoute } from './fixtures'
 import { COURSES, problemPath, unitPath } from '../src/content/courses'
 import { EXAMS } from '../src/content/exams'
+import { IFOOD_SECTIONS, ifoodSectionPath } from '../src/content/ifood'
 
 const WIDTH = 390
 
@@ -10,7 +11,12 @@ const routes = [
   '/trilhas',
   '/provas',
   `/prova/${EXAMS[0].id}`,
-  ...COURSES.flatMap((c) => [c.basePath, unitPath(c, c.units[0].id), problemPath(c, c.problems[0].id)]),
+  ...COURSES.flatMap((c) => [
+    c.basePath,
+    ...(c.units[0] ? [unitPath(c, c.units[0].id)] : []),
+    ...(c.problems[0] ? [problemPath(c, c.problems[0].id)] : []),
+  ]),
+  ...IFOOD_SECTIONS.map((s) => ifoodSectionPath(s.id)),
 ]
 
 test.use({ viewport: { width: WIDTH, height: 844 }, isMobile: true, hasTouch: true })

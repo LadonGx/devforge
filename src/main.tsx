@@ -4,6 +4,7 @@ import { HashRouter } from 'react-router-dom'
 import './styles/global.css'
 import './styles/viz.css'
 import './styles/pages.css'
+import './styles/ifood.css'
 import './lib/theme'
 import App from './App'
 
