@@ -4,9 +4,12 @@ import { IFOOD, IFOOD_SECTIONS, ifoodSection, ifoodSectionPath, type IfoodSectio
 import { useProgress } from '../../lib/progress'
 import { sectionProgress } from '../../lib/ifood'
 import { Markdown } from '../../components/Markdown'
+import { ConceptsView } from './ConceptsView'
 
 /** Conteúdo de cada seção. Cada fase do módulo registra a sua aqui; sem registro, a página mostra o que está planejado. */
-const SECTION_VIEWS: Partial<Record<IfoodSectionId, ComponentType>> = {}
+const SECTION_VIEWS: Partial<Record<IfoodSectionId, ComponentType>> = {
+  conceitos: ConceptsView,
+}
 
 export function IfoodSectionPage() {
   const { section } = useParams()

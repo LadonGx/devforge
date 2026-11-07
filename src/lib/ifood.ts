@@ -1,4 +1,5 @@
 import { IFOOD_SECTIONS, type IfoodSectionId } from '../content/ifood'
+import { CONCEPTS } from '../content/ifood/concepts'
 import type { ProgressState } from './progress'
 
 export interface SectionProgress {
@@ -15,8 +16,14 @@ const pctOf = (done: number, total: number) => (total === 0 ? 0 : Math.round((do
  * Itens de cada seção (feitos / total). Cada fase do módulo preenche a sua seção;
  * enquanto ela não tem conteúdo, o total é 0 e ela aparece como "em construção".
  */
-function sectionItems(_id: IfoodSectionId, _s: ProgressState): { done: number; total: number } {
-  return { done: 0, total: 0 }
+function sectionItems(id: IfoodSectionId, s: ProgressState): { done: number; total: number } {
+  switch (id) {
+    case 'conceitos':
+      // conta a questão como feita quando a última resposta foi a certa
+      return { done: CONCEPTS.filter((q) => s.concepts[q.id]?.right).length, total: CONCEPTS.length }
+    default:
+      return { done: 0, total: 0 }
+  }
 }
 
 export function sectionProgress(id: IfoodSectionId, s: ProgressState): SectionProgress {

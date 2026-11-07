@@ -1,5 +1,6 @@
 import type { Course, Exam, Problem } from '../types'
 import { courseById, unitPath } from '../courses'
+import { IFOOD, ifoodSection, ifoodSectionPath } from '../ifood'
 import { PROVA_1 } from './prova1'
 import { PROVA_2 } from './prova2'
 import { PROVA_3 } from './prova3'
@@ -10,9 +11,13 @@ export const EXAMS: Exam[] = [PROVA_1, PROVA_2, PROVA_3, PROVA_4, PROVA_5]
 
 export const examById = (id: string) => EXAMS.find((e) => e.id === id)
 
-/** "curso:aula" → link e nome da aula, para a seção "O que revisar". */
+/** "curso:aula" (ou "ifood:<seção>") → link e nome, para a seção "O que revisar". */
 export function topicRef(topic: string): { label: string; to: string } | null {
   const [courseId, unitId] = topic.split(':')
+  if (courseId === IFOOD.id) {
+    const sec = ifoodSection(unitId)
+    if (sec) return { label: `Treino iFood: ${sec.title}`, to: ifoodSectionPath(sec.id) }
+  }
   const c = courseById(courseId)
   const u = c?.units.find((x) => x.id === unitId)
   if (!c || !u) return null

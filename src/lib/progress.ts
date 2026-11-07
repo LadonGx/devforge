@@ -10,6 +10,17 @@ export interface ProgressState {
   lang: Lang
   /** resultado das provas: melhor nota, última nota, tentativas */
   exams: Record<string, ExamRecord>
+  /** banco de questões conceituais do treino iFood: última resposta de cada questão */
+  concepts: Record<string, ConceptAnswer>
+}
+
+export interface ConceptAnswer {
+  /** índice da alternativa escolhida (em `options`, não na ordem embaralhada) */
+  picked: number
+  right: boolean
+  /** quantas vezes respondeu */
+  tries: number
+  at: string
 }
 
 export interface ExamRecord {
@@ -22,7 +33,7 @@ export interface ExamRecord {
 
 const KEY = 'devforge:progress:v1'
 
-const empty: ProgressState = { solved: {}, attempted: {}, lessons: {}, code: {}, lang: 'ts', exams: {} }
+const empty: ProgressState = { solved: {}, attempted: {}, lessons: {}, code: {}, lang: 'ts', exams: {}, concepts: {} }
 
 function load(): ProgressState {
   try {
@@ -89,6 +100,19 @@ export const progress = {
       const best = Math.max(prev?.best ?? 0, pct)
       const rec: ExamRecord = { best, last: pct, passed: best >= passPct, attempts: (prev?.attempts ?? 0) + 1, at: new Date().toISOString() }
       return { ...s, exams: { ...s.exams, [id]: rec } }
+    })
+  },
+  answerConcept(id: string, picked: number, right: boolean) {
+    update((s) => {
+      const tries = (s.concepts[id]?.tries ?? 0) + 1
+      return { ...s, concepts: { ...s.concepts, [id]: { picked, right, tries, at: new Date().toISOString() } } }
+    })
+  },
+  clearConcepts(ids: string[]) {
+    update((s) => {
+      const concepts = { ...s.concepts }
+      for (const id of ids) delete concepts[id]
+      return { ...s, concepts }
     })
   },
   setLang(lang: Lang) {

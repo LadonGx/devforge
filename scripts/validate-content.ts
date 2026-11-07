@@ -14,6 +14,8 @@ import { EXAMS, EXAM_COURSE, topicRef } from '../src/content/exams'
 import { STAGES } from '../src/content/guide'
 import { courseById } from '../src/content/courses'
 import { normalizeLine } from '../src/lib/exam'
+import { CONCEPTS, CONCEPT_THEMES } from '../src/content/ifood/concepts'
+import { checkConcepts } from '../src/content/ifood/concepts/check'
 
 const noop = () => {}
 const hooks = {
@@ -204,6 +206,16 @@ for (const st of STAGES) {
     }
   }
 }
+// ---------- iFood: banco de questões conceituais ----------
+for (const err of checkConcepts(CONCEPTS, (ref) => !!topicRef(ref))) {
+  fails++
+  console.log('CONCEITO', err)
+}
+for (const t of CONCEPT_THEMES) if (!topicRef(t.review)) {
+  fails++
+  console.log('CONCEITO tema com review inexistente', t.id, t.review)
+}
+console.log('conceitos ok', CONCEPTS.length, 'questões', CONCEPT_THEMES.map((t) => `${t.id}=${CONCEPTS.filter((q) => q.theme === t.id).length}`).join(' '))
 }
 main().then(() => {
 console.log(`\n${fails === 0 ? 'OK' : 'FALHAS: ' + fails} · ${PROBLEMS.length} exercícios · ${PATTERNS.length} aulas · ${COURSES.length} cursos · ${EXAMS.length} provas`)
