@@ -1,4 +1,5 @@
 import type { CompareMode } from './types'
+import { isRagExpectation, verifyRagAnswer } from '../lib/rag/verify'
 
 function key(x: unknown): string {
   if (x instanceof Map) return 'Map' + key([...x.entries()].sort())
@@ -35,6 +36,7 @@ const sortBy = (arr: unknown[]) => [...arr].sort((x, y) => (key(x) < key(y) ? -1
 
 export function compareResult(got: unknown, expected: unknown, mode: CompareMode): boolean {
   if (mode === 'float') return deepEqual(got, expected, true)
+  if (mode === 'rag') return isRagExpectation(expected) && verifyRagAnswer(got, expected).pass
   if (mode === 'unordered' && Array.isArray(got) && Array.isArray(expected)) {
     return deepEqual(sortBy(got), sortBy(expected), false)
   }

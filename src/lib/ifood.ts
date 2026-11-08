@@ -1,6 +1,7 @@
 import { IFOOD, IFOOD_SECTIONS, ifoodSection, type IfoodSectionId } from '../content/ifood'
 import { lessonKey } from '../content/courses'
 import { CONCEPTS } from '../content/ifood/concepts'
+import { IFOOD_PROBLEM_LIST, RAG_PROBLEM_LIST } from '../content/ifood/problems'
 import type { ProgressState } from './progress'
 
 export interface SectionProgress {
@@ -27,7 +28,9 @@ function sectionItems(id: IfoodSectionId, s: ProgressState): { done: number; tot
         // a questão conta como feita quando a última resposta foi a certa
         return { done: CONCEPTS.filter((q) => s.concepts[q.id]?.right).length, total: CONCEPTS.length }
       case 'problemas':
-        return { done: IFOOD.problems.filter((p) => s.solved[p.id]).length, total: IFOOD.problems.length }
+        return { done: IFOOD_PROBLEM_LIST.filter((e) => s.solved[e.problem.id]).length, total: IFOOD_PROBLEM_LIST.length }
+      case 'rag':
+        return { done: RAG_PROBLEM_LIST.filter((e) => s.solved[e.problem.id]).length, total: RAG_PROBLEM_LIST.length }
       default:
         return { done: 0, total: 0 }
     }

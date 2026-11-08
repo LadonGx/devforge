@@ -47,7 +47,7 @@ export const IFOOD_SECTIONS: IfoodSection[] = [
     icon: '⌕',
     short: 'O pipeline de RAG por dentro, implementado por você em TypeScript.',
     summary:
-      'Como um assistente responde com base nos seus documentos: dividir o texto em pedaços, transformar cada pedaço em vetor, achar os mais parecidos com a pergunta e montar o prompt com esse contexto. Você implementa cada etapa e vê o pipeline animado.',
+      'Como um assistente responde com base nos seus documentos: dividir o texto em pedaços, transformar cada pedaço em vetor, achar os mais parecidos com a pergunta e montar o prompt com esse contexto. Você implementa cada etapa e testa o pipeline no laboratório, mexendo no tamanho dos trechos, no k e no limiar.',
     inTest: 'Um candidato relatou uma questão de implementar um RAG. No HackerRank, a entrada tem `context` e `question`, e a saída tem `reasoning` e `response`.',
     planned: [
       'Aula visual do pipeline: chunking, embeddings, similaridade de cosseno, top-k e montagem do prompt',
@@ -57,7 +57,7 @@ export const IFOOD_SECTIONS: IfoodSection[] = [
       'Exercício no formato do HackerRank (context + question → reasoning + response), com avaliação',
     ],
     topics: ['Chunking', 'Embeddings', 'TF-IDF', 'Cosseno', 'Top-k', 'Prompt'],
-    lessons: [],
+    lessons: ['rag-pipeline', 'rag-hackerrank'],
   },
   {
     id: 'api',

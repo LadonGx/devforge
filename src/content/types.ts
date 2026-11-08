@@ -19,6 +19,8 @@ export type Block =
   /** `prelude` só é usado pelo `npm run validate` para rodar o código de verdade e conferir a saída */
   | { type: 'eventloop'; title: string; caption?: string; code: string; program: ElStmt[]; prelude?: string }
   | { type: 'timeline'; title: string; caption?: string; tasks: { label: string; ms: number }[] }
+  /** laboratório do pipeline de RAG (chunk → TF-IDF → cosseno → top-k → prompt → resposta) */
+  | { type: 'raglab'; title: string; caption?: string; question?: string }
 
 export interface PipelineStage {
   op: 'map' | 'filter' | 'reduce' | 'find' | 'some' | 'every' | 'sort'

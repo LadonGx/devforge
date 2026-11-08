@@ -5,6 +5,7 @@
  */
 import { serialize } from './serialize'
 import { compareResult } from './compare'
+import { isRagExpectation, verifyRagAnswer } from '../lib/rag/verify'
 import { GLOBALS, buildArgs, convertResult, runDesign } from './ds'
 import type { IOSpec, RunError, TestResult, WorkerRequest, WorkerResponse } from './types'
 
@@ -86,6 +87,11 @@ export async function executeTests(req: Extract<WorkerRequest, { kind: 'test' }>
     try {
       const got = await execute(fn, t.input, req.io)
       const ms = performance.now() - t0
+      if (req.compare === 'rag' && isRagExpectation(t.expected)) {
+        const v = verifyRagAnswer(got, t.expected)
+        results.push({ pass: v.pass, got: serialize(got), logs: logs.take(), ms, checks: v.checks.map(({ label, pass, detail }) => ({ label, pass, detail })) })
+        continue
+      }
       results.push({ pass: compareResult(got, t.expected, req.compare), got: serialize(got), logs: logs.take(), ms })
     } catch (e) {
       results.push({ pass: false, error: toRunError(e), logs: logs.take(), ms: performance.now() - t0 })

@@ -6,12 +6,14 @@ import { sectionProgress } from '../../lib/ifood'
 import { Markdown } from '../../components/Markdown'
 import { ConceptsView } from './ConceptsView'
 import { ProblemsView } from './ProblemsView'
+import { RagView } from './RagView'
 import { lessonKey, unitPath } from '../../content/courses'
 
 /** Conteúdo de cada seção. Cada fase do módulo registra a sua aqui; sem registro, a página mostra o que está planejado. */
 const SECTION_VIEWS: Partial<Record<IfoodSectionId, ComponentType>> = {
   conceitos: ConceptsView,
   problemas: ProblemsView,
+  rag: RagView,
 }
 
 export function IfoodSectionPage() {

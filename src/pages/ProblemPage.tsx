@@ -175,7 +175,8 @@ function ProblemWorkspace({ p, course }: { p: Problem; course: Course }) {
                 📖 Aula: {pattern.title}
               </Link>
             )}
-            {related.map((r) => (
+            {/* o selo da aula do padrão já aparece acima; não repete */}
+            {related.filter((r) => !pattern || r.to !== unitPath(course, pattern.id)).map((r) => (
               <Link key={r.to} className="badge" to={r.to}>
                 📖 {r.label}
               </Link>

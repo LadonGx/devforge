@@ -1,7 +1,10 @@
 import { test, expect, gotoRoute, pasteIntoEditor, readProgress } from './fixtures'
 import { IFOOD, IFOOD_SECTIONS, ifoodSectionPath } from '../src/content/ifood'
 import { CONCEPTS, CONCEPT_THEMES } from '../src/content/ifood/concepts'
-import { IFOOD_PROBLEMS } from '../src/content/ifood/problems'
+import { IFOOD_PROBLEM_LIST } from '../src/content/ifood/problems'
+
+/** Problemas da seção 1 (IFOOD.problems também tem os exercícios de RAG). */
+const SECTION1 = IFOOD_PROBLEM_LIST.map((e) => e.problem)
 import { problemPath } from '../src/content/courses'
 
 test('vitrine mostra o módulo do iFood e leva para a página do treino', async ({ page }) => {
@@ -87,15 +90,15 @@ test.describe('seção 1 · problemas', () => {
   test('a seção mostra a aula e os problemas em ordem', async ({ page }) => {
     await gotoRoute(page, ifoodSectionPath('problemas'))
     await expect(page.locator('.ifood-lesson')).toHaveCount(1)
-    await expect(page.locator('.ifood-problems .practice-item')).toHaveCount(IFOOD_PROBLEMS.length)
+    await expect(page.locator('.ifood-problems .practice-item')).toHaveCount(SECTION1.length)
     await page.locator('.ifood-problems .practice-item').first().click()
-    await expect(page.locator('.problem-title')).toContainText(IFOOD_PROBLEMS[0].title)
+    await expect(page.locator('.problem-title')).toContainText(SECTION1[0].title)
     await expect(page.getByRole('heading', { name: 'Formato de entrada' })).toBeVisible()
     await expect(page.locator('.problem-head')).toContainText('testes ocultos')
   })
 
   test('testes ocultos: só mostram se passaram, e dá para revelar o que falhou', async ({ page }) => {
-    const p = IFOOD_PROBLEMS[0]
+    const p = SECTION1[0]
     const hidden = p.tests.filter((t) => t.hidden).length
     await gotoRoute(page, problemPath(IFOOD, p.id))
     await page.locator('.editor-toolbar .seg').getByRole('button', { name: 'JavaScript', exact: true }).click()

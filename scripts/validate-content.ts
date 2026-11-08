@@ -17,7 +17,7 @@ import { normalizeLine } from '../src/lib/exam'
 import { CONCEPTS, CONCEPT_THEMES } from '../src/content/ifood/concepts'
 import { checkConcepts } from '../src/content/ifood/concepts/check'
 import { IFOOD, IFOOD_SECTIONS } from '../src/content/ifood'
-import { IFOOD_PROBLEM_LIST } from '../src/content/ifood/problems'
+import { IFOOD_PROBLEM_LIST, RAG_PROBLEM_LIST } from '../src/content/ifood/problems'
 
 const noop = () => {}
 const hooks = {
@@ -222,11 +222,15 @@ for (const sec of IFOOD_SECTIONS) for (const l of sec.lessons) if (!IFOOD.units.
   fails++
   console.log('IFOOD seção aponta para aula inexistente', sec.id, l)
 }
-for (const { topic, problem: p } of IFOOD_PROBLEM_LIST) {
+const RAG_PATTERNS = ['rag-pipeline', 'rag-hackerrank']
+const ifoodEntries = [...IFOOD_PROBLEM_LIST.map((e) => ({ ...e, rag: false })), ...RAG_PROBLEM_LIST.map((e) => ({ ...e, rag: true }))]
+for (const { topic, problem: p, rag } of ifoodEntries) {
   const errs: string[] = []
   if (!p.id.startsWith('ifood-')) errs.push('id deve começar com "ifood-"')
   if (!topic.trim()) errs.push('topic vazio')
-  if (p.pattern !== 'problemas-hackerrank') errs.push('pattern deve ser "problemas-hackerrank"')
+  if (!rag && p.pattern !== 'problemas-hackerrank') errs.push('pattern deve ser "problemas-hackerrank"')
+  if (rag && !RAG_PATTERNS.includes(p.pattern)) errs.push('pattern deve ser uma aula de RAG: ' + RAG_PATTERNS.join(' ou '))
+  if (rag && !IFOOD.units.some((u) => u.id === p.pattern && u.problems.includes(p.id))) errs.push('a aula ' + p.pattern + ' precisa listar este exercício em problems')
   if (!p.format?.input.trim() || !p.format?.output.trim()) errs.push('falta format.input/format.output')
   if (!p.related?.length) errs.push('falta related (aula do padrão do NeetCode)')
   for (const r of p.related ?? []) if (!topicRef(r)) errs.push('related inexistente: ' + r)
@@ -242,7 +246,7 @@ for (const { topic, problem: p } of IFOOD_PROBLEM_LIST) {
     console.log('IFOOD PROBLEMA', `[${p.id}]`, e)
   }
 }
-console.log('ifood ok', IFOOD.units.length, 'aulas', IFOOD_PROBLEM_LIST.length, 'problemas')
+console.log('ifood ok', IFOOD.units.length, 'aulas', IFOOD_PROBLEM_LIST.length, 'problemas', RAG_PROBLEM_LIST.length, 'exercícios de RAG')
 console.log('conceitos ok', CONCEPTS.length, 'questões', CONCEPT_THEMES.map((t) => `${t.id}=${CONCEPTS.filter((q) => q.theme === t.id).length}`).join(' '))
 }
 main().then(() => {

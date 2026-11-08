@@ -11,7 +11,10 @@ export const test = base.extend({
     const errors: string[] = []
     page.on('pageerror', (e) => errors.push(`pageerror: ${e.message}`))
     page.on('console', (m) => {
-      if (m.type() === 'error') errors.push(`console.error: ${m.text()}`)
+      if (m.type() !== 'error') return
+      // erro HTTP da API do Groq (chave inválida, limite) é esperado e aparece na tela como aviso
+      if (m.location().url.startsWith('https://api.groq.com/') && m.text().startsWith('Failed to load resource')) return
+      errors.push(`console.error: ${m.text()}`)
     })
     await page.addInitScript(() => {
       const wrap = (obj: object, name: string) => {

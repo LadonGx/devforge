@@ -85,7 +85,8 @@ export interface RunError {
 }
 
 // ---------- Testes ----------
-export type CompareMode = 'exact' | 'unordered' | 'unorderedNested' | 'float'
+/** 'rag': expected é uma RagExpectation e a resposta passa pelo verificador de RAG (src/lib/rag/verify.ts) */
+export type CompareMode = 'exact' | 'unordered' | 'unorderedNested' | 'float' | 'rag'
 
 export interface TestCase {
   input: unknown[]
@@ -100,6 +101,8 @@ export interface TestResult {
   error?: RunError
   logs: string[]
   ms: number
+  /** critérios avaliados (só no modo 'rag'), mostrados no lugar do diff */
+  checks?: { label: string; pass: boolean; detail?: string }[]
 }
 
 export interface TestRun {

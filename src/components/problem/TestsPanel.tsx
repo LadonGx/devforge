@@ -251,7 +251,7 @@ function CaseRow({
   const t = p.tests[idx]
   const expected = serialize(t.expected)
   const design = !!p.io?.design
-  const msg = !r.pass && !r.error && !design ? diagnose(expected, r.got, ordered) : null
+  const msg = !r.pass && !r.error && !design && !r.checks ? diagnose(expected, r.got, ordered) : null
   const retAs = p.io?.ret
   if (locked) {
     return (
@@ -314,6 +314,22 @@ function CaseRow({
           </div>
           )}
           {msg && <div className="diagnosis">🧭 {inlineMd(msg)}</div>}
+          {r.checks && (
+            <div className="io-section">
+              <div className="io-title">Critérios da avaliação</div>
+              <ul className="rag-checks">
+                {r.checks.map((c) => (
+                  <li key={c.label} className={c.pass ? 'is-ok' : 'is-bad'}>
+                    <span className="rag-check-icon">{c.pass ? '✓' : '✗'}</span>
+                    <span>
+                      {c.label}
+                      {c.detail && <span className="muted small"> · {c.detail}</span>}
+                    </span>
+                  </li>
+                ))}
+              </ul>
+            </div>
+          )}
           {r.logs.length > 0 && (
             <div className="io-section">
               <div className="io-title">console.log</div>
