@@ -1,6 +1,8 @@
-import { test, expect, gotoRoute, readProgress } from './fixtures'
+import { test, expect, gotoRoute, pasteIntoEditor, readProgress } from './fixtures'
 import { IFOOD, IFOOD_SECTIONS, ifoodSectionPath } from '../src/content/ifood'
 import { CONCEPTS, CONCEPT_THEMES } from '../src/content/ifood/concepts'
+import { IFOOD_PROBLEMS } from '../src/content/ifood/problems'
+import { problemPath } from '../src/content/courses'
 
 test('vitrine mostra o módulo do iFood e leva para a página do treino', async ({ page }) => {
   await gotoRoute(page, '/')
@@ -49,9 +51,10 @@ test.describe('seção 4 · conceitos', () => {
     const concepts = (progress?.concepts ?? {}) as Record<string, { right: boolean }>
     expect(CONCEPTS.every((q) => concepts[q.id]?.right)).toBe(true)
     await expect(page.locator('.concepts-score .lc-progress-num')).toHaveText(`${CONCEPTS.length}/${CONCEPTS.length}`)
-    // o card da seção no hub mostra o total
+    // o card da seção no hub soma questões e aulas (as aulas ainda não foram marcadas)
+    const lessons = IFOOD_SECTIONS.find((x) => x.id === 'conceitos')!.lessons.filter((l) => IFOOD.units.some((u) => u.id === l)).length
     await gotoRoute(page, IFOOD.basePath)
-    await expect(page.locator('.ifood-section-card', { hasText: 'Conceitos' })).toContainText(`${CONCEPTS.length}/${CONCEPTS.length}`)
+    await expect(page.locator('.ifood-section-card', { hasText: 'Conceitos' })).toContainText(`${CONCEPTS.length}/${CONCEPTS.length + lessons}`)
   })
 
   test('errar mostra o porquê de cada alternativa e o filtro "Erradas"', async ({ page }) => {
@@ -77,5 +80,46 @@ test.describe('seção 4 · conceitos', () => {
       await page.locator('.concepts-theme', { hasText: t.title }).click()
       await expect(page.locator('article.concept')).toHaveCount(CONCEPTS.filter((q) => q.theme === t.id).length)
     }
+  })
+})
+
+test.describe('seção 1 · problemas', () => {
+  test('a seção mostra a aula e os problemas em ordem', async ({ page }) => {
+    await gotoRoute(page, ifoodSectionPath('problemas'))
+    await expect(page.locator('.ifood-lesson')).toHaveCount(1)
+    await expect(page.locator('.ifood-problems .practice-item')).toHaveCount(IFOOD_PROBLEMS.length)
+    await page.locator('.ifood-problems .practice-item').first().click()
+    await expect(page.locator('.problem-title')).toContainText(IFOOD_PROBLEMS[0].title)
+    await expect(page.getByRole('heading', { name: 'Formato de entrada' })).toBeVisible()
+    await expect(page.locator('.problem-head')).toContainText('testes ocultos')
+  })
+
+  test('testes ocultos: só mostram se passaram, e dá para revelar o que falhou', async ({ page }) => {
+    const p = IFOOD_PROBLEMS[0]
+    const hidden = p.tests.filter((t) => t.hidden).length
+    await gotoRoute(page, problemPath(IFOOD, p.id))
+    await page.locator('.editor-toolbar .seg').getByRole('button', { name: 'JavaScript', exact: true }).click()
+
+    // antes de rodar: os ocultos aparecem com cadeado e sem a entrada
+    await expect(page.locator('.case-pending', { hasText: 'entrada oculta' })).toHaveCount(hidden)
+
+    // uma solução errada: os ocultos falham, mas sem mostrar entrada nem esperado
+    await pasteIntoEditor(page, `function ${p.fnName}() {\n  return null\n}`)
+    await page.locator('.problem-right .cm-content').focus()
+    await page.keyboard.press('ControlOrMeta+Enter')
+    await expect(page.locator('.verdict-bad')).toContainText(`ocultos 0/${hidden}`)
+    const locked = page.locator('.case-locked')
+    await expect(locked).toHaveCount(hidden)
+    await expect(locked.first().locator('.io-section')).toHaveCount(0)
+    await locked.first().getByRole('button', { name: 'Revelar para estudar' }).click()
+    await expect(page.locator('.case.open')).toContainText('Caso oculto revelado')
+    await expect(page.locator('.case-locked')).toHaveCount(hidden - 1)
+
+    // a solução de referência passa em tudo, com o placar separado
+    await pasteIntoEditor(page, p.solution.js)
+    await page.locator('.problem-right .cm-content').focus()
+    await page.keyboard.press('ControlOrMeta+Enter')
+    await expect(page.locator('.verdict-ok .verdict-title')).toHaveText('Aceito ✓', { timeout: 40_000 })
+    await expect(page.locator('.verdict-ok')).toContainText(`ocultos ${hidden}/${hidden}`)
   })
 })

@@ -11,6 +11,7 @@ import { DifficultyBadge } from '../components/DifficultyBadge'
 import { Visualizer } from '../components/viz/Visualizer'
 import { TestsPanel } from '../components/problem/TestsPanel'
 import { PerfPanel } from '../components/problem/PerfPanel'
+import { topicRef } from '../content/exams'
 
 type LeftTab = 'desc' | 'hints' | 'solution'
 type BottomTab = 'tests' | 'viz' | 'perf'
@@ -65,6 +66,8 @@ function ProblemWorkspace({ p, course }: { p: Problem; course: Course }) {
   }, [code, lang, p])
 
   const pattern = course.units.find((u) => u.id === p.pattern)
+  // aulas dos padrões usados na solução (ex.: o padrão do NeetCode de um problema do treino iFood)
+  const related = (p.related ?? []).flatMap((r) => topicRef(r) ?? [])
   const idx = course.problems.indexOf(p)
   const nextProblem = course.problems[idx + 1]
   const solved = !!s.solved[p.id]
@@ -172,6 +175,12 @@ function ProblemWorkspace({ p, course }: { p: Problem; course: Course }) {
                 📖 Aula: {pattern.title}
               </Link>
             )}
+            {related.map((r) => (
+              <Link key={r.to} className="badge" to={r.to}>
+                📖 {r.label}
+              </Link>
+            ))}
+            {p.tests.some((t) => t.hidden) && <span className="badge">{p.tests.filter((t) => t.hidden).length} testes ocultos</span>}
           </div>
         </div>
         <div className="tabs">
@@ -189,6 +198,14 @@ function ProblemWorkspace({ p, course }: { p: Problem; course: Course }) {
           {leftTab === 'desc' && (
             <>
               <Markdown md={p.description} />
+              {p.format && (
+                <>
+                  <h4 style={{ marginTop: 16 }}>Formato de entrada</h4>
+                  <Markdown md={p.format.input} />
+                  <h4 style={{ marginTop: 16 }}>Formato de saída</h4>
+                  <Markdown md={p.format.output} />
+                </>
+              )}
               {p.examples.map((ex, i) => (
                 <div key={i} className="example">
                   <div className="example-title">Exemplo {i + 1}</div>
@@ -272,6 +289,19 @@ function ProblemWorkspace({ p, course }: { p: Problem; course: Course }) {
                     </div>
                   </div>
                   <p className="text-2 small">{p.explanation.complexityWhy}</p>
+                  {related.length > 0 && (
+                    <div className="callout callout-tip">
+                      <div className="callout-title">Padrão usado</div>
+                      Esta solução usa o padrão de{' '}
+                      {related.map((r, i) => (
+                        <span key={r.to}>
+                          {i > 0 && ' e '}
+                          <Link to={r.to}>{r.label.replace(/^[^:]+: /, '')}</Link>
+                        </span>
+                      ))}
+                      . Revise a aula para reconhecer os sinais no próximo enunciado.
+                    </div>
+                  )}
                   {p.bruteForce && (
                     <div className="callout callout-info">
                       <div className="callout-title">Força bruta (para mencionar na entrevista)</div>
@@ -380,11 +410,13 @@ function ProblemWorkspace({ p, course }: { p: Problem; course: Course }) {
                 <div className="viz-picker">
                   <label className="muted small">Caso:</label>
                   <select value={vizCase} onChange={(e) => setVizCase(Number(e.target.value))} className="select">
-                    {p.tests.map((t, i) => (
-                      <option key={i} value={i}>
-                        {i + 1}. {t.label ?? `Caso ${i + 1}`}
-                      </option>
-                    ))}
+                    {p.tests.map((t, i) =>
+                      t.hidden ? null : (
+                        <option key={i} value={i}>
+                          {i + 1}. {t.label ?? `Caso ${i + 1}`}
+                        </option>
+                      ),
+                    )}
                   </select>
                   <button className="btn btn-sm btn-primary" onClick={() => onTrace('user', vizCase)} disabled={!!busy}>
                     Meu código

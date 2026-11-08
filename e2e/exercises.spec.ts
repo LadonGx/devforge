@@ -1,5 +1,4 @@
-import type { Page } from '@playwright/test'
-import { test, expect, gotoRoute, readProgress } from './fixtures'
+import { test, expect, gotoRoute, pasteIntoEditor, readProgress } from './fixtures'
 import { COURSES, problemPath } from '../src/content/courses'
 
 /**
@@ -7,18 +6,6 @@ import { COURSES, problemPath } from '../src/content/courses'
  * cola a solução de referência no CodeMirror, roda os testes, espera "Aceito" e abre o
  * visualizador passo a passo com o código colado.
  */
-
-/** Substitui todo o conteúdo do editor por `text` simulando um Ctrl+A + Ctrl+V real (evento `paste`). */
-async function pasteIntoEditor(page: Page, text: string) {
-  const content = page.locator('.problem-right .cm-content')
-  await content.click()
-  await page.keyboard.press('ControlOrMeta+A')
-  await content.evaluate((el, t) => {
-    const dt = new DataTransfer()
-    dt.setData('text/plain', t)
-    el.dispatchEvent(new ClipboardEvent('paste', { clipboardData: dt, bubbles: true, cancelable: true }))
-  }, text)
-}
 
 for (const course of COURSES) {
   test.describe(course.title, () => {

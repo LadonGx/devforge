@@ -5,6 +5,7 @@ import type { PerfResult, TestResult, V } from '../../engine/types'
 import type { TestRun } from '../../engine/runner'
 import { serialize, formatV } from '../../engine/serialize'
 import { ValueView, sameV } from '../viz/views'
+import { summarizeRun } from '../../engine/exec'
 
 interface Props {
   p: Problem
@@ -65,15 +66,25 @@ function inlineMd(text: string) {
   )
 }
 
+/** Rótulo de um caso: os ocultos são numerados à parte ("Teste oculto 2"), como no HackerRank. */
+function caseLabel(p: Problem, i: number) {
+  const t = p.tests[i]
+  if (t.hidden) return `Teste oculto ${p.tests.slice(0, i + 1).filter((x) => x.hidden).length}`
+  return t.label ?? `Caso ${i + 1}`
+}
+
 export function TestsPanel({ p, run, perf, busy, onVisualize, onPerf, nextProblem, nextPath }: Props) {
   const [open, setOpen] = useState<number | null>(null)
+  // casos ocultos que o aluno decidiu revelar para estudar (no teste real, eles nunca aparecem)
+  const [revealed, setRevealed] = useState<Set<number>>(new Set())
   const ordered = (p.compare ?? 'exact') === 'exact' || p.compare === 'float'
+  const hiddenCount = p.tests.filter((t) => t.hidden).length
 
   useEffect(() => {
     if (!run) return
-    const firstFail = run.results.findIndex((r) => !r.pass)
+    const firstFail = run.results.findIndex((r, i) => !r.pass && !p.tests[i].hidden)
     setOpen(firstFail >= 0 ? firstFail : null)
-  }, [run])
+  }, [run, p])
 
   if (busy === 'tests') return <div className="loading">Rodando {p.tests.length} testes…</div>
 
@@ -81,15 +92,20 @@ export function TestsPanel({ p, run, perf, busy, onVisualize, onPerf, nextProble
     return (
       <div className="tests">
         <p className="muted small" style={{ marginTop: 0 }}>
-          {p.tests.length} casos de teste. Escreva sua solução e clique em <strong>Rodar testes</strong> (ou Ctrl+Enter).
+          {hiddenCount > 0
+            ? `${p.tests.length - hiddenCount} casos visíveis e ${hiddenCount} ocultos (como no HackerRank, a nota vem de todos). `
+            : `${p.tests.length} casos de teste. `}
+          Escreva sua solução e clique em <strong>Rodar testes</strong> (ou Ctrl+Enter).
         </p>
         <div className="case-list">
           {p.tests.map((t, i) => (
             <div key={i} className="case-row case-pending">
-              <span className="case-icon">○</span>
-              <span className="case-label">{t.label ?? `Caso ${i + 1}`}</span>
+              <span className="case-icon">{t.hidden ? '🔒' : '○'}</span>
+              <span className="case-label">{caseLabel(p, i)}</span>
               <code className="case-preview">
-                {p.io?.design
+                {t.hidden
+                  ? 'entrada oculta'
+                  : p.io?.design
                   ? (t.input[0] as string[]).join(', ')
                   : p.params.map((n, k) => `${n} = ${formatV(serialize(t.input[k]))}`).join(', ')}
               </code>
@@ -127,8 +143,10 @@ export function TestsPanel({ p, run, perf, busy, onVisualize, onPerf, nextProble
     )
   }
 
-  const pass = run.results.filter((r) => r.pass).length
-  const all = pass === run.results.length
+  const sum = summarizeRun(run.results, p.tests)
+  const pass = sum.pass
+  const all = pass === sum.total
+  const split = sum.hiddenTotal > 0 ? ` · visíveis ${sum.visiblePass}/${sum.visibleTotal} · ocultos ${sum.hiddenPass}/${sum.hiddenTotal}` : ''
   const hasError = run.results.some((r) => r.error)
   const perfTLE = perf && p.perf && (perf.timeout || (perf.userMs ?? 0) > p.perf.limitMs)
   const slow = perf && p.perf && !perfTLE && perf.userMs !== undefined && perf.refMs !== undefined && perf.userMs > Math.max(perf.refMs * 8, 30)
@@ -155,7 +173,7 @@ export function TestsPanel({ p, run, perf, busy, onVisualize, onPerf, nextProble
           <div className="verdict verdict-ok">
             <div className="verdict-title">Aceito ✓</div>
             <p className="small" style={{ margin: 0 }}>
-              {pass}/{run.results.length} testes passaram
+              {pass}/{run.results.length} testes passaram{split}
               {perf?.userMs !== undefined && ` · ${p.perf!.label}: ${perf.userMs.toFixed(1)} ms`}
               {slow && ' · passou, mas bem mais lento que a referência: confira a aba Desempenho.'}
             </p>
@@ -174,7 +192,10 @@ export function TestsPanel({ p, run, perf, busy, onVisualize, onPerf, nextProble
         <div className="verdict verdict-bad">
           <div className="verdict-title">{hasError ? 'Erro em tempo de execução' : 'Resposta errada'}</div>
           <p className="small" style={{ margin: 0 }}>
-            {pass} de {run.results.length} testes passaram. Abra o caso em vermelho para ver o que veio diferente, e visualize ele passo a passo.
+            {pass} de {run.results.length} testes passaram{split}.{' '}
+            {run.results.some((r, i) => !r.pass && !p.tests[i].hidden)
+              ? 'Abra o caso em vermelho para ver o que veio diferente, e visualize ele passo a passo.'
+              : 'Os visíveis passam, mas algum oculto falha: pense nos casos de borda (vazio, um elemento, repetidos, limites das restrições).'}
           </p>
         </div>
       )}
@@ -186,6 +207,12 @@ export function TestsPanel({ p, run, perf, busy, onVisualize, onPerf, nextProble
             idx={i}
             p={p}
             r={r}
+            label={caseLabel(p, i)}
+            locked={!!p.tests[i].hidden && !revealed.has(i)}
+            onReveal={() => {
+              setRevealed(new Set(revealed).add(i))
+              setOpen(i)
+            }}
             open={open === i}
             toggle={() => setOpen(open === i ? null : i)}
             ordered={ordered}
@@ -201,6 +228,9 @@ function CaseRow({
   idx,
   p,
   r,
+  label,
+  locked,
+  onReveal,
   open,
   toggle,
   ordered,
@@ -209,6 +239,10 @@ function CaseRow({
   idx: number
   p: Problem
   r: TestResult
+  label: string
+  /** caso oculto ainda não revelado: só mostra se passou */
+  locked: boolean
+  onReveal: () => void
   open: boolean
   toggle: () => void
   ordered: boolean
@@ -219,17 +253,35 @@ function CaseRow({
   const design = !!p.io?.design
   const msg = !r.pass && !r.error && !design ? diagnose(expected, r.got, ordered) : null
   const retAs = p.io?.ret
+  if (locked) {
+    return (
+      <div className={'case case-locked' + (r.pass ? ' case-pass' : ' case-fail')}>
+        <div className="case-row">
+          <span className="case-icon">{r.pass ? '✓' : '✗'}</span>
+          <span className="case-label">🔒 {label}</span>
+          <span className="spacer" />
+          {!r.pass && (
+            <button className="btn btn-sm btn-ghost" onClick={onReveal} title="No teste real você não veria este caso">
+              Revelar para estudar
+            </button>
+          )}
+          <span className="muted small">{r.ms.toFixed(1)} ms</span>
+        </div>
+      </div>
+    )
+  }
   return (
     <div className={'case' + (r.pass ? ' case-pass' : ' case-fail') + (open ? ' open' : '')}>
       <button className="case-row" onClick={toggle}>
         <span className="case-icon">{r.pass ? '✓' : '✗'}</span>
-        <span className="case-label">{t.label ?? `Caso ${idx + 1}`}</span>
+        <span className="case-label">{label}</span>
         <span className="spacer" />
         <span className="muted small">{r.ms.toFixed(1)} ms</span>
         <span className="case-caret">{open ? '▾' : '▸'}</span>
       </button>
       {open && (
         <div className="case-detail">
+          {t.hidden && <div className="callout callout-warn small">Caso oculto revelado. No HackerRank você só saberia que ele falhou.</div>}
           {design ? (
             <DesignTable ops={t.input[0] as string[]} args={t.input[1] as unknown[][]} expected={t.expected as unknown[]} got={r.got} error={!!r.error} />
           ) : (

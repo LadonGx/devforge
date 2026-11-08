@@ -48,7 +48,7 @@ export function UnitPage({ course: c }: { course: Course }) {
         </button>
       </div>
 
-      <h2 style={{ marginTop: 32 }}>Pratique</h2>
+      {u.problems.length > 0 && <h2 style={{ marginTop: 32 }}>Pratique</h2>}
       <div className="practice-list">
         {u.problems.map((pid, i) => {
           const prob = c.problems.find((x) => x.id === pid)

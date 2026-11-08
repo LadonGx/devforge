@@ -10,6 +10,7 @@
     "preview": "vite preview",
     "validate": "rolldown scripts/validate-content.ts --file node_modules/.tmp/validate.cjs --format cjs --platform node --log-level silent && node node_modules/.tmp/validate.cjs",
     "typecheck": "tsc -b",
+    "test": "vitest run",
     "e2e": "playwright test"
   },
   "dependencies": {
@@ -32,6 +33,7 @@
     "@vitejs/plugin-react": "^6.1.1",
     "oxlint": "^1.81.0",
     "typescript": "~6.0.2",
-    "vite": "^8.3.0"
+    "vite": "^8.3.0",
+    "vitest": "^5.1.0"
   }
 }

@@ -16,6 +16,8 @@ import { courseById } from '../src/content/courses'
 import { normalizeLine } from '../src/lib/exam'
 import { CONCEPTS, CONCEPT_THEMES } from '../src/content/ifood/concepts'
 import { checkConcepts } from '../src/content/ifood/concepts/check'
+import { IFOOD, IFOOD_SECTIONS } from '../src/content/ifood'
+import { IFOOD_PROBLEM_LIST } from '../src/content/ifood/problems'
 
 const noop = () => {}
 const hooks = {
@@ -215,6 +217,32 @@ for (const t of CONCEPT_THEMES) if (!topicRef(t.review)) {
   fails++
   console.log('CONCEITO tema com review inexistente', t.id, t.review)
 }
+// ---------- iFood: aulas das seções e problemas estilo HackerRank ----------
+for (const sec of IFOOD_SECTIONS) for (const l of sec.lessons) if (!IFOOD.units.find((u) => u.id === l)) {
+  fails++
+  console.log('IFOOD seção aponta para aula inexistente', sec.id, l)
+}
+for (const { topic, problem: p } of IFOOD_PROBLEM_LIST) {
+  const errs: string[] = []
+  if (!p.id.startsWith('ifood-')) errs.push('id deve começar com "ifood-"')
+  if (!topic.trim()) errs.push('topic vazio')
+  if (p.pattern !== 'problemas-hackerrank') errs.push('pattern deve ser "problemas-hackerrank"')
+  if (!p.format?.input.trim() || !p.format?.output.trim()) errs.push('falta format.input/format.output')
+  if (!p.related?.length) errs.push('falta related (aula do padrão do NeetCode)')
+  for (const r of p.related ?? []) if (!topicRef(r)) errs.push('related inexistente: ' + r)
+  const hidden = p.tests.filter((t) => t.hidden).length
+  if (p.tests.length - hidden < 2) errs.push('precisa de pelo menos 2 testes visíveis')
+  if (hidden < 4) errs.push(`precisa de pelo menos 4 testes ocultos (tem ${hidden})`)
+  if (p.tests[0]?.hidden) errs.push('o primeiro teste deve ser visível (é o caso padrão do visualizador)')
+  if (p.tests.some((t) => !t.label)) errs.push('todo teste precisa de label')
+  if (p.examples.length === 0) errs.push('precisa de exemplos')
+  if (p.hints.length < 2) errs.push('precisa de pelo menos 2 dicas')
+  for (const e of errs) {
+    fails++
+    console.log('IFOOD PROBLEMA', `[${p.id}]`, e)
+  }
+}
+console.log('ifood ok', IFOOD.units.length, 'aulas', IFOOD_PROBLEM_LIST.length, 'problemas')
 console.log('conceitos ok', CONCEPTS.length, 'questões', CONCEPT_THEMES.map((t) => `${t.id}=${CONCEPTS.filter((q) => q.theme === t.id).length}`).join(' '))
 }
 main().then(() => {

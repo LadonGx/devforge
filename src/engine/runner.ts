@@ -31,9 +31,23 @@ export function prepare(code: string, lang: Lang): Prepared {
 
 type Timeout = { kind: 'timeout' }
 
-function runInWorker(req: WorkerRequest, timeoutMs: number): Promise<WorkerResponse | Timeout> {
+/** O que o runner usa de um Worker (os testes unitários passam um falso). */
+export interface WorkerLike {
+  onmessage: ((ev: MessageEvent<WorkerResponse>) => void) | null
+  onerror: ((ev: ErrorEvent) => void) | null
+  postMessage(req: WorkerRequest): void
+  terminate(): void
+}
+
+const createWorker = (): WorkerLike => new Worker(new URL('./runner.worker.ts', import.meta.url), { type: 'module' }) as unknown as WorkerLike
+
+/**
+ * Roda um pedido num Web Worker novo. Se não responder em `timeoutMs` (loop infinito, solução lenta),
+ * o worker é encerrado à força e a resposta é `{ kind: 'timeout' }`: a página nunca trava.
+ */
+export function runInWorker(req: WorkerRequest, timeoutMs: number, spawn: () => WorkerLike = createWorker): Promise<WorkerResponse | Timeout> {
   return new Promise((resolve) => {
-    const worker = new Worker(new URL('./runner.worker.ts', import.meta.url), { type: 'module' })
+    const worker = spawn()
     const timer = setTimeout(() => {
       worker.terminate()
       resolve({ kind: 'timeout' })

@@ -1,4 +1,5 @@
-import { IFOOD_SECTIONS, type IfoodSectionId } from '../content/ifood'
+import { IFOOD, IFOOD_SECTIONS, ifoodSection, type IfoodSectionId } from '../content/ifood'
+import { lessonKey } from '../content/courses'
 import { CONCEPTS } from '../content/ifood/concepts'
 import type { ProgressState } from './progress'
 
@@ -17,13 +18,21 @@ const pctOf = (done: number, total: number) => (total === 0 ? 0 : Math.round((do
  * enquanto ela não tem conteúdo, o total é 0 e ela aparece como "em construção".
  */
 function sectionItems(id: IfoodSectionId, s: ProgressState): { done: number; total: number } {
-  switch (id) {
-    case 'conceitos':
-      // conta a questão como feita quando a última resposta foi a certa
-      return { done: CONCEPTS.filter((q) => s.concepts[q.id]?.right).length, total: CONCEPTS.length }
-    default:
-      return { done: 0, total: 0 }
-  }
+  // aulas da seção (só as que já existem)
+  const lessons = (ifoodSection(id)?.lessons ?? []).filter((l) => IFOOD.units.some((u) => u.id === l))
+  const lessonsDone = lessons.filter((l) => s.lessons[lessonKey(IFOOD, l)]).length
+  const items = (() => {
+    switch (id) {
+      case 'conceitos':
+        // a questão conta como feita quando a última resposta foi a certa
+        return { done: CONCEPTS.filter((q) => s.concepts[q.id]?.right).length, total: CONCEPTS.length }
+      case 'problemas':
+        return { done: IFOOD.problems.filter((p) => s.solved[p.id]).length, total: IFOOD.problems.length }
+      default:
+        return { done: 0, total: 0 }
+    }
+  })()
+  return { done: items.done + lessonsDone, total: items.total + lessons.length }
 }
 
 export function sectionProgress(id: IfoodSectionId, s: ProgressState): SectionProgress {

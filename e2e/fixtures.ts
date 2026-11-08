@@ -47,3 +47,15 @@ export async function gotoRoute(page: Page, route: string) {
 export const PROGRESS_KEY = 'devforge:progress:v1'
 export const readProgress = (page: Page) =>
   page.evaluate((k) => JSON.parse(localStorage.getItem(k) || 'null'), PROGRESS_KEY)
+
+/** Substitui todo o conteúdo do editor por `text` simulando um Ctrl+A + Ctrl+V real (evento `paste`). */
+export async function pasteIntoEditor(page: Page, text: string) {
+  const content = page.locator('.problem-right .cm-content')
+  await content.click()
+  await page.keyboard.press('ControlOrMeta+A')
+  await content.evaluate((el, t) => {
+    const dt = new DataTransfer()
+    dt.setData('text/plain', t)
+    el.dispatchEvent(new ClipboardEvent('paste', { clipboardData: dt, bubbles: true, cancelable: true }))
+  }, text)
+}

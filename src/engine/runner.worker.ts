@@ -1,13 +1,11 @@
 /// <reference lib="webworker" />
 import { serialize, formatLogArg, formatV } from './serialize'
-import { compareResult } from './compare'
-import { GLOBALS, buildArgs, convertResult, runDesign } from './ds'
-import type { CallNode, FrameSnap, IOSpec, RunError, Step, TestResult, WorkerRequest, WorkerResponse, V } from './types'
+import { compile, executeTests, execute, getFn, toRunError } from './exec'
+import type { CallNode, FrameSnap, RunError, Step, WorkerRequest, WorkerResponse, V } from './types'
 
 const MAX_STEPS = 2500
 const MAX_CALLS = 400
 const MAX_LOGS = 300
-const LINE_OFFSET = 2 // `new Function` adiciona 2 linhas antes do código
 
 let logs: string[] = []
 
@@ -28,82 +26,13 @@ installConsole()
 
 class StepLimit extends Error {}
 
-function toRunError(e: unknown): RunError {
-  if (e instanceof Error) {
-    const m = /(?:<anonymous>|Function|eval):(\d+):\d+/.exec(e.stack || '')
-    const line = m ? Number(m[1]) - LINE_OFFSET : undefined
-    return { message: e.message, name: e.name, line: line && line > 0 ? line : undefined }
-  }
-  return { message: String(e), name: 'Error' }
-}
-
-const GLOBAL_NAMES = Object.keys(GLOBALS)
-const GLOBAL_VALUES = Object.values(GLOBALS)
-
-/**
- * Compila o código do usuário. As estruturas (ListNode, TreeNode, MinHeap...) ficam num escopo
- * externo, então o usuário pode redeclará-las se quiser. O código começa na linha 3 (LINE_OFFSET).
- */
-function compile(code: string, fnName: string, hooks: Record<string, unknown> = {}): unknown {
-  const names = [...GLOBAL_NAMES, ...Object.keys(hooks)]
-  const factory = new Function(
-    ...names,
-    `return (function(){${code}\n;return (typeof ${fnName} !== 'undefined') ? ${fnName} : undefined;})()`,
-  )
-  return factory(...GLOBAL_VALUES, ...Object.values(hooks))
-}
-
-function getFn(exported: unknown, fnName: string): (...a: unknown[]) => unknown {
-  if (typeof exported !== 'function') {
-    throw new ReferenceError(`Não encontrei "${fnName}". Não renomeie a função/classe principal.`)
-  }
-  return exported as (...a: unknown[]) => unknown
-}
-
-/** Executa um caso: função comum ou problema de design (classe). */
-const harnessCache = new Map<string, (...a: unknown[]) => unknown>()
-
-async function execute(fn: (...a: unknown[]) => unknown, input: unknown[], io: IOSpec | undefined) {
-  if (io?.harness) {
-    let h = harnessCache.get(io.harness)
-    if (!h) {
-      h = new Function(`return (${io.harness})`)() as (...a: unknown[]) => unknown
-      harnessCache.set(io.harness, h)
-    }
-    let r = h(fn, ...structuredClone(input))
-    if (r instanceof Promise) r = await r
-    return r
-  }
-  if (io?.design) {
-    const [ops, args] = structuredClone(input) as [string[], unknown[][]]
-    return runDesign(fn, ops, args, io.design === 'factory')
-  }
-  let r = fn(...buildArgs(io, input))
-  if (r instanceof Promise) r = await r
-  return convertResult(io, r)
-}
-
-async function runTests(req: Extract<WorkerRequest, { kind: 'test' }>): Promise<WorkerResponse> {
-  let fn: (...a: unknown[]) => unknown
-  try {
-    fn = getFn(compile(req.code, req.fnName), req.fnName)
-  } catch (e) {
-    return { kind: 'test', results: [], fatal: toRunError(e) }
-  }
-  const results: TestResult[] = []
-  for (const t of req.tests) {
-    logs = []
-    const t0 = performance.now()
-    try {
-      const got = await execute(fn, t.input, req.io)
-      const ms = performance.now() - t0
-      results.push({ pass: compareResult(got, t.expected, req.compare), got: serialize(got), logs, ms })
-    } catch (e) {
-      results.push({ pass: false, error: toRunError(e), logs, ms: performance.now() - t0 })
-    }
-  }
-  return { kind: 'test', results }
-}
+const runTests = (req: Extract<WorkerRequest, { kind: 'test' }>) =>
+  executeTests(req, {
+    reset: () => {
+      logs = []
+    },
+    take: () => logs,
+  })
 
 const short = (s: string, n = 22) => (s.length > n ? s.slice(0, n - 1) + '…' : s)
 

@@ -1,4 +1,6 @@
 import type { Course } from '../types'
+import { IFOOD_LESSONS } from './lessons'
+import { IFOOD_PROBLEMS } from './problems'
 
 /** Seções do treino. A ordem é a da prova (problemas, RAG, API, conceitos, SQL e o simulado). */
 export type IfoodSectionId = 'problemas' | 'rag' | 'api' | 'conceitos' | 'sql' | 'simulado'
@@ -17,6 +19,8 @@ export interface IfoodSection {
   planned: string[]
   /** temas que a seção cobre, em chips */
   topics: string[]
+  /** aulas para estudar antes de praticar (ids em IFOOD.units, rota /ifood/aula/:id) */
+  lessons: string[]
 }
 
 export const IFOOD_SECTIONS: IfoodSection[] = [
@@ -35,6 +39,7 @@ export const IFOOD_SECTIONS: IfoodSection[] = [
       'Explicação visual da solução e do Big O, com link para o padrão do NeetCode no DevForge',
     ],
     topics: ['Arrays', 'Hash map', 'Ordenação', 'Strings', 'Guloso', 'Busca binária', 'DP', 'Pilha e fila', 'BFS e DFS'],
+    lessons: ['problemas-hackerrank'],
   },
   {
     id: 'rag',
@@ -52,6 +57,7 @@ export const IFOOD_SECTIONS: IfoodSection[] = [
       'Exercício no formato do HackerRank (context + question → reasoning + response), com avaliação',
     ],
     topics: ['Chunking', 'Embeddings', 'TF-IDF', 'Cosseno', 'Top-k', 'Prompt'],
+    lessons: [],
   },
   {
     id: 'api',
@@ -67,6 +73,7 @@ export const IFOOD_SECTIONS: IfoodSection[] = [
       'Linha do tempo de cada requisição: página pedida, status e tempo',
     ],
     topics: ['Paginação', 'async / await', 'Promise.all', 'Status HTTP', 'Retry no 429'],
+    lessons: [],
   },
   {
     id: 'conceitos',
@@ -82,6 +89,7 @@ export const IFOOD_SECTIONS: IfoodSection[] = [
       'Temas: Big O e estruturas de dados, grafos, ordenação e busca, banco de dados, HTTP e REST, IA aplicada',
     ],
     topics: ['Big O', 'Estruturas de dados', 'Grafos', 'Ordenação', 'Banco de dados', 'HTTP', 'IA aplicada'],
+    lessons: ['conceitos-complexidade', 'conceitos-grafos', 'conceitos-ordenacao', 'conceitos-banco', 'conceitos-http', 'conceitos-ia'],
   },
   {
     id: 'sql',
@@ -99,6 +107,7 @@ export const IFOOD_SECTIONS: IfoodSection[] = [
       'Visual das tabelas envolvidas e das linhas que se combinam no JOIN',
     ],
     topics: ['SELECT e WHERE', 'Agregação', 'JOINs', 'GROUP BY / HAVING', 'Subconsultas', 'Janela', 'CTE'],
+    lessons: [],
   },
   {
     id: 'simulado',
@@ -115,6 +124,7 @@ export const IFOOD_SECTIONS: IfoodSection[] = [
       'Relatório com nota por área, tempo por questão e links para revisar',
     ],
     topics: ['Cronômetro', 'Sem dicas', 'Nota por área', 'Tempo por questão'],
+    lessons: [],
   },
 ]
 
@@ -159,6 +169,6 @@ export const IFOOD: Course = {
   volumeLabel: 'Processos seletivos',
   intro: '',
   how: [],
-  units: [],
-  problems: [],
+  units: IFOOD_LESSONS,
+  problems: IFOOD_PROBLEMS,
 }

@@ -303,3 +303,49 @@
     padding-left: 12px;
   }
 }
+
+/* ----- Aulas da seção e lista de problemas ----- */
+
+.ifood-lessons {
+  margin-top: 24px;
+}
+.ifood-lessons h2,
+.ifood-problems h2 {
+  margin: 0 0 4px;
+}
+.ifood-lesson-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(min(100%, 240px), 1fr));
+  gap: 10px;
+  margin-top: 10px;
+}
+.ifood-lesson {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  border-top: 3px solid var(--accent);
+  color: var(--text);
+}
+.ifood-lesson:hover {
+  text-decoration: none;
+  border-color: var(--accent);
+}
+.ifood-lesson-kicker {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--accent);
+}
+.ifood-lesson.is-done .ifood-lesson-kicker {
+  color: var(--ok);
+}
+.ifood-problems {
+  margin-top: 28px;
+}
+.ifood-problems .practice-list {
+  list-style: none;
+  margin: 12px 0 0;
+  padding: 0;
+}
+.case-locked .case-row {
+  cursor: default;
+}

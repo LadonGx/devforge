@@ -39,6 +39,16 @@ export interface Problem {
   fnName: string
   params: string[]
   description: string
+  /**
+   * Formato HackerRank: como a entrada chega e o que a função deve devolver
+   * (aparece como "Formato de entrada" / "Formato de saída" no enunciado).
+   */
+  format?: { input: string; output: string }
+  /**
+   * Aulas que explicam o padrão usado na solução ("curso:aula", ex.: "leetcode:arrays-hashing").
+   * Aparecem no topo do exercício e na solução explicada.
+   */
+  related?: string[]
   examples: { input: string; output: string; explanation?: string }[]
   constraints: string[]
   starter: { js: string; ts: string }

@@ -5,10 +5,13 @@ import { useProgress } from '../../lib/progress'
 import { sectionProgress } from '../../lib/ifood'
 import { Markdown } from '../../components/Markdown'
 import { ConceptsView } from './ConceptsView'
+import { ProblemsView } from './ProblemsView'
+import { lessonKey, unitPath } from '../../content/courses'
 
 /** Conteúdo de cada seção. Cada fase do módulo registra a sua aqui; sem registro, a página mostra o que está planejado. */
 const SECTION_VIEWS: Partial<Record<IfoodSectionId, ComponentType>> = {
   conceitos: ConceptsView,
+  problemas: ProblemsView,
 }
 
 export function IfoodSectionPage() {
@@ -28,6 +31,7 @@ export function IfoodSectionPage() {
   const next = IFOOD_SECTIONS[idx + 1]
   const p = sectionProgress(sec.id, s)
   const View = SECTION_VIEWS[sec.id]
+  const lessons = sec.lessons.flatMap((id) => IFOOD.units.find((u) => u.id === id) ?? [])
 
   return (
     <div>
@@ -55,6 +59,28 @@ export function IfoodSectionPage() {
         <div className="callout-title">Como cai no teste</div>
         <Markdown md={sec.inTest} />
       </div>
+
+      {lessons.length > 0 && (
+        <section className="ifood-lessons">
+          <h2>Estude primeiro</h2>
+          <p className="muted small">
+            {lessons.length === 1 ? 'A aula explica' : 'As aulas explicam'} o conceito com exemplos do dia a dia, código rodando passo a passo e
+            perguntas rápidas. Depois, pratique abaixo.
+          </p>
+          <div className="ifood-lesson-grid">
+            {lessons.map((u) => {
+              const done = !!s.lessons[lessonKey(IFOOD, u.id)]
+              return (
+                <Link key={u.id} to={unitPath(IFOOD, u.id)} className={'card ifood-lesson' + (done ? ' is-done' : '')} style={{ borderTopColor: u.color }}>
+                  <span className="ifood-lesson-kicker">{done ? '✓ Aula concluída' : '📖 Aula'}</span>
+                  <strong>{u.title}</strong>
+                  <span className="muted small">{u.short}</span>
+                </Link>
+              )
+            })}
+          </div>
+        </section>
+      )}
 
       {View ? (
         <View />
